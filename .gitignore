@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+*.pyc
+
+data/raw/
+*.xlsx
+*.csv
+
+secrets.toml
+.streamlit/secrets.toml
