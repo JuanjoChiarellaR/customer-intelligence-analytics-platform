@@ -1,0 +1,163 @@
+-- ============================================================
+-- Customer Intelligence Analytics Platform
+-- 00 - Environment Setup
+-- ============================================================
+
+-- Use an administrative role for initial setup
+USE ROLE ACCOUNTADMIN;
+
+-- ------------------------------------------------------------
+-- 1. Create project role
+-- ------------------------------------------------------------
+
+CREATE ROLE IF NOT EXISTS CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT ROLE CUSTOMER_INTELLIGENCE_ROLE
+TO USER IDENTIFIER(CURRENT_USER());
+
+-- Allow use of Snowflake Cortex capabilities
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+-- ------------------------------------------------------------
+-- 2. Create compute warehouse
+-- ------------------------------------------------------------
+
+CREATE WAREHOUSE IF NOT EXISTS CUSTOMER_INTELLIGENCE_WH
+    WAREHOUSE_SIZE = 'XSMALL'
+    AUTO_SUSPEND = 60
+    AUTO_RESUME = TRUE
+    INITIALLY_SUSPENDED = TRUE
+    COMMENT = 'Warehouse for Customer Intelligence Analytics Platform';
+
+GRANT USAGE
+ON WAREHOUSE CUSTOMER_INTELLIGENCE_WH
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+-- ------------------------------------------------------------
+-- 3. Create project database
+-- ------------------------------------------------------------
+
+CREATE DATABASE IF NOT EXISTS CUSTOMER_INTELLIGENCE
+    COMMENT = 'Customer Intelligence Analytics Platform';
+
+GRANT USAGE
+ON DATABASE CUSTOMER_INTELLIGENCE
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+-- ------------------------------------------------------------
+-- 4. Create schemas
+-- ------------------------------------------------------------
+
+CREATE SCHEMA IF NOT EXISTS CUSTOMER_INTELLIGENCE.RAW
+    COMMENT = 'Raw source data';
+
+CREATE SCHEMA IF NOT EXISTS CUSTOMER_INTELLIGENCE.CORE
+    COMMENT = 'Cleaned and standardized customer-level data';
+
+CREATE SCHEMA IF NOT EXISTS CUSTOMER_INTELLIGENCE.ANALYTICS
+    COMMENT = 'Business-ready analytical marts and views';
+
+CREATE SCHEMA IF NOT EXISTS CUSTOMER_INTELLIGENCE.SEMANTIC
+    COMMENT = 'Semantic layer and AI-ready business definitions';
+
+CREATE SCHEMA IF NOT EXISTS CUSTOMER_INTELLIGENCE.VALIDATION
+    COMMENT = 'Metric reconciliation and AI output validation';
+
+
+-- ------------------------------------------------------------
+-- 5. Grant schema privileges
+-- ------------------------------------------------------------
+
+GRANT USAGE, CREATE TABLE, CREATE VIEW, CREATE STAGE, CREATE FILE FORMAT
+ON SCHEMA CUSTOMER_INTELLIGENCE.RAW
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT USAGE, CREATE TABLE, CREATE VIEW
+ON SCHEMA CUSTOMER_INTELLIGENCE.CORE
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT USAGE, CREATE TABLE, CREATE VIEW
+ON SCHEMA CUSTOMER_INTELLIGENCE.ANALYTICS
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT USAGE, CREATE TABLE, CREATE VIEW
+ON SCHEMA CUSTOMER_INTELLIGENCE.SEMANTIC
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT USAGE, CREATE TABLE, CREATE VIEW
+ON SCHEMA CUSTOMER_INTELLIGENCE.VALIDATION
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+-- ------------------------------------------------------------
+-- 6. Future object privileges
+-- ------------------------------------------------------------
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON FUTURE TABLES IN SCHEMA CUSTOMER_INTELLIGENCE.RAW
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT SELECT
+ON FUTURE VIEWS IN SCHEMA CUSTOMER_INTELLIGENCE.RAW
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON FUTURE TABLES IN SCHEMA CUSTOMER_INTELLIGENCE.CORE
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT SELECT
+ON FUTURE VIEWS IN SCHEMA CUSTOMER_INTELLIGENCE.CORE
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON FUTURE TABLES IN SCHEMA CUSTOMER_INTELLIGENCE.ANALYTICS
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT SELECT
+ON FUTURE VIEWS IN SCHEMA CUSTOMER_INTELLIGENCE.ANALYTICS
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON FUTURE TABLES IN SCHEMA CUSTOMER_INTELLIGENCE.SEMANTIC
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT SELECT
+ON FUTURE VIEWS IN SCHEMA CUSTOMER_INTELLIGENCE.SEMANTIC
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON FUTURE TABLES IN SCHEMA CUSTOMER_INTELLIGENCE.VALIDATION
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+GRANT SELECT
+ON FUTURE VIEWS IN SCHEMA CUSTOMER_INTELLIGENCE.VALIDATION
+TO ROLE CUSTOMER_INTELLIGENCE_ROLE;
+
+
+-- ------------------------------------------------------------
+-- 7. Switch to project role and working context
+-- ------------------------------------------------------------
+
+USE ROLE CUSTOMER_INTELLIGENCE_ROLE;
+USE WAREHOUSE CUSTOMER_INTELLIGENCE_WH;
+USE DATABASE CUSTOMER_INTELLIGENCE;
+USE SCHEMA RAW;
+
+
+-- ------------------------------------------------------------
+-- 8. Validate environment
+-- ------------------------------------------------------------
+
+SELECT
+    CURRENT_ROLE()      AS CURRENT_ROLE,
+    CURRENT_WAREHOUSE() AS CURRENT_WAREHOUSE,
+    CURRENT_DATABASE()  AS CURRENT_DATABASE,
+    CURRENT_SCHEMA()    AS CURRENT_SCHEMA;

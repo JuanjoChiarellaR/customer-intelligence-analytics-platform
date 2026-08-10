@@ -1,0 +1,50 @@
+-- ============================================================
+-- Customer Intelligence Analytics Platform
+-- ANALYTICS - Enhanced Lifecycle Churn by Tenure
+-- ============================================================
+
+USE ROLE CUSTOMER_INTELLIGENCE_ROLE;
+USE WAREHOUSE CUSTOMER_INTELLIGENCE_WH;
+USE DATABASE CUSTOMER_INTELLIGENCE;
+USE SCHEMA ANALYTICS;
+
+CREATE OR REPLACE VIEW
+    CUSTOMER_INTELLIGENCE.ANALYTICS.VW_CHURN_BY_TENURE_ENHANCED AS
+
+WITH BASE_CURVE AS (
+
+    SELECT *
+    FROM CUSTOMER_INTELLIGENCE.ANALYTICS.VW_CHURN_BY_TENURE
+
+)
+
+SELECT
+
+    TENURE_MONTH,
+    CUSTOMERS_REACHING_TENURE,
+    CHURNED_AT_TENURE,
+    CHURN_RATE_AT_TENURE,
+    CHURN_CONTRIBUTION,
+
+    -- 3-month centered moving average when neighboring months exist
+    ROUND(
+        AVG(CHURN_RATE_AT_TENURE) OVER (
+            ORDER BY TENURE_MONTH
+            ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+        ),
+        4
+    ) AS ROLLING_3M_CHURN_RATE,
+
+    -- Support / reliability flag
+    CASE
+        WHEN CUSTOMERS_REACHING_TENURE >= 1000 THEN 'High Support'
+        WHEN CUSTOMERS_REACHING_TENURE >= 500 THEN 'Medium Support'
+        ELSE 'Low Support'
+    END AS BASE_SUPPORT_LEVEL,
+
+    AVG_MONTHLY_CHARGE_CHURNED,
+    AVG_CLTV_CHURNED
+
+FROM BASE_CURVE
+
+ORDER BY TENURE_MONTH;
