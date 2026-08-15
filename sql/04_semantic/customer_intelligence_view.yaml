@@ -1,7 +1,7 @@
 name: CUSTOMER_INTELLIGENCE_VIEW
 tables:
   - name: CUSTOMER_360_VIEW
-    description: "The table contains a comprehensive view of customer profiles, consolidating demographic and geographic information for each individual. Each record represents a single customer and includes details about personal characteristics such as age, marital status, and household composition, as well as location data and customer engagement attributes like referral activity and contract details."
+    description: The table contains a comprehensive view of customer profiles, consolidating demographic and geographic information for each individual. Each record represents a single customer and includes details about personal characteristics such as age, marital status, and household composition, as well as location data and customer engagement attributes like referral activity and contract details.
     base_table:
       database: CUSTOMER_INTELLIGENCE
       schema: CORE
@@ -16,7 +16,7 @@ tables:
           - Under 30
           - 45-59
       - name: CHURN_CATEGORY
-        description: "The category of churn reason associated with a customer, indicating the broad classification of why a customer discontinued their relationship or subscription."
+        description: The category of churn reason associated with a customer, indicating the broad classification of why a customer discontinued their relationship or subscription.
         expr: CHURN_CATEGORY
         data_type: VARCHAR(16777216)
         sample_values:
@@ -25,10 +25,10 @@ tables:
       - name: CHURN_FLAG
         description: A binary flag indicating whether a customer has churned (1) or not (0).
         expr: CHURN_FLAG
-        data_type: "NUMBER(1,0)"
+        data_type: NUMBER(1,0)
         sample_values:
-          - "1"
-          - "0"
+          - '1'
+          - '0'
       - name: CHURN_REASON
         description: The reason why a customer has churned or discontinued their relationship with the business.
         expr: CHURN_REASON
@@ -47,13 +47,13 @@ tables:
       - name: CLTV
         description: Source-provided Customer Lifetime Value (CLTV) indicator used to compare relative customer value. The underlying calculation methodology is not provided by the source dataset.
         expr: CLTV
-        data_type: "NUMBER(38,0)"
+        data_type: NUMBER(38,0)
         sample_values:
-          - "2058"
-          - "2555"
-          - "2654"
+          - '2058'
+          - '2555'
+          - '2654'
       - name: CONTRACT
-        description: "The contract associated with a customer, likely containing contract identifiers or details related to the customer's agreement or subscription."
+        description: Customer contract type. Values include Month-to-Month, One Year, and Two Year.
         expr: CONTRACT
         data_type: VARCHAR(16777216)
         sample_values:
@@ -69,7 +69,7 @@ tables:
           - 7602-DBTOU
           - 0020-JDNXP
       - name: CUSTOMER_STATUS
-        description: "Observed customer lifecycle status in the available snapshot. Values include Joined, Stayed, and Churned."
+        description: Observed customer lifecycle status in the available snapshot. Values include Joined, Stayed, and Churned.
         expr: CUSTOMER_STATUS
         data_type: VARCHAR(16777216)
         sample_values:
@@ -81,7 +81,7 @@ tables:
           - CLTV segment
           - customer value tier
           - value segment
-        description: "The customer's value-based segment classification, grouping customers by their relative worth or importance to the business."
+        description: The customer's value-based segment classification, grouping customers by their relative worth or importance to the business.
         expr: CUSTOMER_VALUE_SEGMENT
         data_type: VARCHAR(16777216)
         sample_values:
@@ -93,8 +93,8 @@ tables:
         expr: INTERNET_SERVICE
         data_type: VARCHAR(16777216)
         sample_values:
-          - "No"
-          - "Yes"
+          - 'No'
+          - 'Yes'
       - name: INTERNET_TYPE
         description: Type of internet service used by the customer when internet service is present.
         expr: INTERNET_TYPE
@@ -110,7 +110,7 @@ tables:
           - Offer B
           - Offer E
       - name: PAYMENT_METHOD
-        description: "The payment method used by the customer (e.g., credit card, bank transfer, cash)."
+        description: The payment method used by the customer (e.g., credit card, bank transfer, cash).
         expr: PAYMENT_METHOD
         data_type: VARCHAR(16777216)
         sample_values:
@@ -122,16 +122,16 @@ tables:
         expr: PREMIUM_TECH_SUPPORT
         data_type: VARCHAR(16777216)
         sample_values:
-          - "Yes"
-          - "No"
+          - 'Yes'
+          - 'No'
       - name: SATISFACTION_SCORE
         description: Numerical score representing a customer's satisfaction level.
         expr: SATISFACTION_SCORE
-        data_type: "NUMBER(38,0)"
+        data_type: NUMBER(38,0)
         sample_values:
-          - "2"
-          - "1"
-          - "4"
+          - '2'
+          - '1'
+          - '4'
       - name: STATE
         description: The United States state associated with the customer's address or location.
         expr: STATE
@@ -139,7 +139,7 @@ tables:
         sample_values:
           - California
       - name: TENURE_BAND
-        description: "The customer's tenure band, representing a categorized range of the duration of their relationship with the organization."
+        description: The customer's tenure band, representing a categorized range of the duration of their relationship with the organization.
         expr: TENURE_BAND
         data_type: VARCHAR(12)
         sample_values:
@@ -154,11 +154,11 @@ tables:
           - tenure
         description: The length of a customer's tenure measured in months.
         expr: TENURE_IN_MONTHS
-        data_type: "NUMBER(38,0)"
+        data_type: NUMBER(38,0)
         sample_values:
-          - "15"
-          - "3"
-          - "24"
+          - '15'
+          - '3'
+          - '24'
       - name: TOTAL_SERVICE_COUNT
         synonyms:
           - number of services
@@ -167,11 +167,11 @@ tables:
           - service depth
         description: The total number of services associated with a customer.
         expr: TOTAL_SERVICE_COUNT
-        data_type: "NUMBER(11,0)"
+        data_type: NUMBER(11,0)
         sample_values:
-          - "9"
-          - "8"
-          - "5"
+          - '9'
+          - '8'
+          - '5'
     facts:
       - name: MONTHLY_CHARGE
         description: The monthly charge amount billed to the customer.
@@ -179,19 +179,19 @@ tables:
         data_type: FLOAT
         access_modifier: public_access
         sample_values:
-          - "98.8"
-          - "76.85"
-          - "107.75"
+          - '98.8'
+          - '76.85'
+          - '107.75'
         default_aggregation: 1
       - name: TOTAL_REVENUE
-        description: The total revenue generated from a customer.
+        description: Source-provided accumulated historical revenue associated with the customer. This represents historical accumulated revenue, not current-period revenue.
         expr: TOTAL_REVENUE
         data_type: FLOAT
         access_modifier: public_access
         sample_values:
-          - "2249.76"
-          - "334.73"
-          - "3578.27"
+          - '2249.76'
+          - '334.73'
+          - '3578.27'
         default_aggregation: 1
     metrics:
       - name: AVG_CLTV
@@ -206,6 +206,15 @@ tables:
         description: Average observed customer tenure in months across the selected customer population.
         expr: AVG(tenure_in_months)
         access_modifier: public_access
+      - name: CHURN_RATE
+        synonyms:
+          - attrition rate
+          - churn percentage
+          - customer churn
+          - customer loss rate
+        description: Observed churn rate across the selected customer population, calculated as churned customers divided by total unique customers. This is a snapshot-based churn rate, not a historical beginning-of-period churn calculation.
+        expr: COUNT_IF(churn_flag = 1) / NULLIF(COUNT(DISTINCT customer_id), 0)
+        access_modifier: public_access
       - name: CHURNED_CUSTOMERS
         synonyms:
           - churn volume
@@ -215,17 +224,8 @@ tables:
         description: Count of customers identified as churned in the observed customer snapshot.
         expr: COUNT_IF(churn_flag = 1)
         access_modifier: public_access
-      - name: CHURN_RATE
-        synonyms:
-          - attrition rate
-          - churn percentage
-          - customer churn
-          - customer loss rate
-        description: "Observed churn rate across the selected customer population, calculated as churned customers divided by total unique customers. This is a snapshot-based churn rate, not a historical beginning-of-period churn calculation."
-        expr: "COUNT_IF(churn_flag = 1) / NULLIF(COUNT(DISTINCT customer_id), 0)"
-        access_modifier: public_access
       - name: TOTAL_CUSTOMERS
-        description: "Count of unique customers in the selected population, calculated using distinct CUSTOMER_ID values. Use for customer count and as a denominator for population-based metrics."
+        description: Count of unique customers in the selected population, calculated using distinct CUSTOMER_ID values. Use for customer count and as a denominator for population-based metrics.
         expr: COUNT(DISTINCT customer_id)
         access_modifier: public_access
       - name: TOTAL_HISTORICAL_REVENUE
@@ -234,7 +234,7 @@ tables:
           - cumulative historical revenue
           - customer historical revenue
           - historical revenue
-        description: "Total accumulated historical revenue across the selected customer population, calculated as the sum of the source-provided customer-level TOTAL_REVENUE field. This is historical accumulated revenue, not current-period revenue."
+        description: Total accumulated historical revenue across the selected customer population, calculated as the sum of the source-provided customer-level TOTAL_REVENUE field. This is historical accumulated revenue, not current-period revenue.
         expr: SUM(total_revenue)
         access_modifier: public_access
       - name: TOTAL_MONTHLY_CHARGES
@@ -242,7 +242,7 @@ tables:
         expr: SUM(monthly_charge)
         access_modifier: public_access
   - name: VW_CHURN_BY_TENURE_SEGMENT
-    description: "The table contains records of customer churn rates analyzed by tenure and segmentation. Each record captures churn behavior at a specific tenure milestone, including the volume of customers reaching that point and the rate at which they churned, broken down across different customer segments."
+    description: The table contains records of customer churn rates analyzed by tenure and segmentation. Each record captures churn behavior at a specific tenure milestone, including the volume of customers reaching that point and the rate at which they churned, broken down across different customer segments.
     base_table:
       database: CUSTOMER_INTELLIGENCE
       schema: ANALYTICS
@@ -269,48 +269,41 @@ tables:
           - lifecycle month
           - month of tenure
           - tenure month
-        description: "The number of months a customer has been active, used to segment tenure for churn analysis."
+        description: The number of months a customer has been active, used to segment tenure for churn analysis.
         expr: TENURE_MONTH
-        data_type: "NUMBER(38,0)"
+        data_type: NUMBER(38,0)
         sample_values:
-          - "2"
-          - "1"
-          - "3"
+          - '2'
+          - '1'
+          - '3'
     facts:
-      - name: CHURNED_AT_TENURE
-        description: Count of customers in the selected segment who churned at exactly the specified tenure month.
-        expr: CHURNED_AT_TENURE
-        data_type: "NUMBER(13,0)"
-        access_modifier: public_access
-        sample_values:
-          - "121"
-          - "67"
-          - "380"
-        default_aggregation: 1
       - name: CHURN_RATE_AT_TENURE
         synonyms:
           - churn at month
           - churn by tenure
           - lifecycle churn rate
           - tenure churn rate
-        description: "Observed churn rate at a specific tenure month, calculated as customers churned at that tenure divided by customers whose observed tenure reached at least that month. This is a cross-sectional lifecycle approximation, not a historical cohort churn rate."
+        description: Observed churn rate at a specific tenure month, calculated as customers churned at that tenure divided by customers whose observed tenure reached at least that month. This is a cross-sectional lifecycle approximation, not a historical cohort churn rate.
         expr: CHURN_RATE_AT_TENURE
-        data_type: "NUMBER(20,4)"
+        data_type: NUMBER(20,4)
         access_modifier: public_access
         sample_values:
-          - "0.0296"
-          - "0.0044"
-          - "0.0171"
-      - name: CONTRACT_CHURN_BY_TENURE
-        description: "Filters the churn-by-tenure analysis to records segmented by the 'Contract' dimension (e.g., Month-to-Month, One Year, Two Year), covering all tenure milestones regardless of customer volume. Use when questions ask about 'churn over tenure by contract', 'how contract type affects churn timing', 'churn rate at each tenure point for different contracts', or 'contract-based churn survival analysis'. Helps answer business questions about the relationship between contract type and the timing of customer churn across the full customer lifecycle."
-        expr: dimension_name = 'Contract'
-        data_type: BOOLEAN
+          - '0.0296'
+          - '0.0044'
+          - '0.0171'
+      - name: CHURNED_AT_TENURE
+        description: Count of customers in the selected segment who churned at exactly the specified tenure month.
+        expr: CHURNED_AT_TENURE
+        data_type: NUMBER(13,0)
         access_modifier: public_access
-        labels:
-          - filter
-      - name: CONTRACT_CHURN_BY_TENURE_SUFFICIENT_SAMPLE
-        description: "Filters the churn-by-tenure analysis to records segmented by the 'Contract' dimension (e.g., Month-to-Month, One Year, Two Year) where at least 200 customers have reached a given tenure milestone, ensuring statistical reliability of the churn rate. Use when questions ask about 'churn rate over time by contract type', 'when do customers on different contracts churn', 'contract-based tenure churn trends', or 'reliable churn patterns by contract'. Helps answer business questions about how contract type influences churn timing while filtering out low-volume tenure points that may produce misleading churn rates."
-        expr: customers_reaching_tenure >= 200 AND dimension_name = 'Contract'
+        sample_values:
+          - '121'
+          - '67'
+          - '380'
+        default_aggregation: 1
+      - name: CONTRACT_CHURN_BY_TENURE
+        description: Filters the churn-by-tenure analysis to records segmented by the 'Contract' dimension (e.g., Month-to-Month, One Year, Two Year), covering all observed tenure milestones regardless of customer volume. Use for questions about churn over tenure by contract, churn timing by contract, or lifecycle churn patterns across contract types.
+        expr: dimension_name = 'Contract'
         data_type: BOOLEAN
         access_modifier: public_access
         labels:
@@ -319,19 +312,17 @@ tables:
         synonyms:
           - customers reaching month
           - customers reaching tenure
-          - customers surviving to tenure
           - customers with at least this tenure
         description: Count of customers in the selected segment whose observed tenure reached at least the specified tenure month.
         expr: CUSTOMERS_REACHING_TENURE
-        data_type: "NUMBER(13,0)"
-        access_modifier: public_access
-        sample_values:
-          - "3016"
-          - "1458"
-          - "661"
+        data_type: NUMBER(13,0)
         default_aggregation: 1
+        sample_values:
+          - '3016'
+          - '1458'
+          - '661'
   - name: VW_CHURN_SEGMENTS
-    description: "The table contains records of customer churn analysis broken down by various segmentation dimensions. Each record represents a segment group and includes metrics related to churn behavior, such as churn rates and contribution, as well as financial impact measures including monthly charges, customer lifetime value, and lost revenue."
+    description: The table contains customer churn analysis broken down by business segmentation dimensions. Each record represents a segment and includes customer volume, churn rate, contribution to total churn, average customer value, and historical and monthly revenue measures associated with customers already identified as churned.
     base_table:
       database: CUSTOMER_INTELLIGENCE
       schema: ANALYTICS
@@ -345,11 +336,11 @@ tables:
           - lost customers
         description: The count of customers who have churned within a given segment.
         expr: CHURNED_CUSTOMERS
-        data_type: "NUMBER(13,0)"
+        data_type: NUMBER(13,0)
         sample_values:
-          - "177"
-          - "459"
-          - "454"
+          - '177'
+          - '459'
+          - '454'
       - name: DIMENSION_NAME
         description: The name of the dimension used to classify or segment customer churn analysis.
         expr: DIMENSION_NAME
@@ -359,7 +350,7 @@ tables:
           - Contract
           - Customer Value
       - name: SEGMENT_VALUE
-        description: "The specific category or value within the selected segmentation dimension, such as Month-to-Month for Contract or Low Value for Customer Value."
+        description: The specific category or value within the selected segmentation dimension, such as Month-to-Month for Contract or Low Value for Customer Value.
         expr: SEGMENT_VALUE
         data_type: VARCHAR(16777216)
         sample_values:
@@ -369,82 +360,81 @@ tables:
       - name: TOTAL_CUSTOMERS
         description: The total count of customers within a churn segment.
         expr: TOTAL_CUSTOMERS
-        data_type: "NUMBER(18,0)"
+        data_type: NUMBER(18,0)
         sample_values:
-          - "1943"
-          - "1362"
-          - "420"
+          - '1943'
+          - '1362'
+          - '420'
     facts:
       - name: AVG_CLTV
         description: The average Customer Lifetime Value (CLTV) for the segment.
         expr: AVG_CLTV
-        data_type: "NUMBER(38,2)"
+        data_type: NUMBER(38,2)
         access_modifier: public_access
         sample_values:
-          - "4476.91"
-          - "4425.70"
-          - "4377.73"
+          - '4476.91'
+          - '4425.70'
+          - '4377.73'
       - name: AVG_MONTHLY_CHARGE
         description: The average monthly charge billed to the customer.
         expr: AVG_MONTHLY_CHARGE
         data_type: FLOAT
         access_modifier: public_access
         sample_values:
-          - "64.17"
-          - "79.48"
-          - "71.21"
-      - name: CHURNED_HISTORICAL_REVENUE
-        description: The total historical revenue attributed to churned customers.
-        expr: CHURNED_HISTORICAL_REVENUE
-        data_type: FLOAT
-        access_modifier: public_access
-        sample_values:
-          - "2114547.83"
-          - "865576.57"
-          - "397729.2"
-        default_aggregation: 1
-      - name: CHURNED_MONTHLY_REVENUE
-        description: Sum of monthly charges associated with customers already identified as churned within the segment. This does not represent forecasted revenue at risk.
-        expr: CHURNED_MONTHLY_REVENUE
-        data_type: FLOAT
-        access_modifier: public_access
-        sample_values:
-          - "15044.05"
-          - "14071.55"
-          - "34248.7"
-        default_aggregation: 1
+          - '64.17'
+          - '79.48'
+          - '71.21'
       - name: CHURN_CONTRIBUTION
         synonyms:
           - churn mix
           - contribution to churn
           - share of churn
           - share of total churn
-        description: "The proportional contribution of a customer segment to overall churn, expressed as a numeric value."
+        description: The proportional contribution of a customer segment to overall churn, expressed as a numeric value.
         expr: CHURN_CONTRIBUTION
-        data_type: "NUMBER(20,4)"
+        data_type: NUMBER(20,4)
         access_modifier: public_access
         sample_values:
-          - "0.2541"
-          - "0.0947"
-          - "0.2429"
+          - '0.2541'
+          - '0.0947'
+          - '0.2429'
       - name: CHURN_RATE
-        description: "The rate at which customers are discontinuing or leaving, expressed as a numerical value."
+        description: The rate at which customers are discontinuing or leaving, expressed as a numerical value.
         expr: CHURN_RATE
-        data_type: "NUMBER(20,4)"
+        data_type: NUMBER(20,4)
         access_modifier: public_access
         sample_values:
-          - "0.3333"
-          - "0.2445"
-          - "0.4214"
+          - '0.3333'
+          - '0.2445'
+          - '0.4214'
       - name: CHURN_SEGMENTS_BY_CUSTOMER_VALUE
-        description: "Filters the churn segments analysis to show only records segmented by the 'Customer Value' dimension, grouping customers by their relative worth or importance to the business (e.g., Low Value, Mid-Low Value, Mid-High Value). Use when questions ask about 'churn by customer value', 'churn rate across value segments', 'which customer value tier churns the most', 'lost revenue by customer value', or 'churn contribution by value segment'. Helps answer business questions about how churn behavior and financial impact differ across customer value tiers, enabling prioritization of retention efforts toward high-value segments."
+        description: Filters the churn segments analysis to show only records segmented by the 'Customer Value' dimension, grouping customers by their relative worth or importance to the business (e.g., Low Value, Mid-Low Value, Mid-High Value). Use when questions ask about 'churn by customer value', 'churn rate across value segments', 'which customer value tier churns the most', 'lost revenue by customer value', or 'churn contribution by value segment'. Helps answer business questions about how churn behavior and financial impact differ across customer value tiers, enabling prioritization of retention efforts toward high-value segments.
         expr: dimension_name = 'Customer Value'
         data_type: BOOLEAN
         access_modifier: public_access
         labels:
           - filter
+      - name: CHURNED_HISTORICAL_REVENUE
+        description: Sum of accumulated historical revenue associated with customers already identified as churned within the segment. This does not represent future revenue loss.
+        expr: CHURNED_HISTORICAL_REVENUE
+        data_type: FLOAT
+        default_aggregation: 1
+        sample_values:
+          - '2114547.83'
+          - '865576.57'
+          - '397729.2'
+      - name: CHURNED_MONTHLY_REVENUE
+        description: Sum of monthly charges associated with customers already identified as churned within the segment. This does not represent forecasted revenue at risk.
+        expr: CHURNED_MONTHLY_REVENUE
+        data_type: FLOAT
+        access_modifier: public_access
+        sample_values:
+          - '15044.05'
+          - '14071.55'
+          - '34248.7'
+        default_aggregation: 1
   - name: VW_PRODUCT_ADOPTION
-    description: "The table contains records of product adoption metrics aggregated by product. Each record captures the adoption status of a product along with associated customer counts, churn behavior, revenue figures, and average customer lifetime value and tenure."
+    description: The table contains records of product adoption metrics aggregated by product. Each record captures the adoption status of a product along with associated customer counts, churn behavior, revenue figures, and average customer lifetime value and tenure.
     base_table:
       database: CUSTOMER_INTELLIGENCE
       schema: ANALYTICS
@@ -459,29 +449,29 @@ tables:
         expr: ADOPTION_STATUS
         data_type: VARCHAR(16777216)
         sample_values:
-          - "Yes"
-          - "No"
+          - 'Yes'
+          - 'No'
       - name: CHURNED_CUSTOMERS
         synonyms:
           - churn volume
           - customer attrition volume
           - customers who churned
           - lost customers
-        description: The count of customers who have discontinued use of the product.
+        description: Count of customers in the product adoption group who are identified as churned in the observed customer snapshot.
         expr: CHURNED_CUSTOMERS
-        data_type: "NUMBER(13,0)"
+        data_type: NUMBER(13,0)
         sample_values:
-          - "1019"
-          - "728"
-          - "545"
+          - '1019'
+          - '728'
+          - '545'
       - name: CUSTOMERS
         description: The total count of customers associated with a given product adoption record.
         expr: CUSTOMERS
-        data_type: "NUMBER(18,0)"
+        data_type: NUMBER(18,0)
         sample_values:
-          - "2019"
-          - "4555"
-          - "5517"
+          - '2019'
+          - '4555'
+          - '5517'
       - name: PRODUCT_NAME
         synonyms:
           - product
@@ -498,57 +488,137 @@ tables:
       - name: AVG_CLTV
         description: The average Customer Lifetime Value (CLTV) associated with a product or customer segment.
         expr: AVG_CLTV
-        data_type: "NUMBER(38,2)"
+        data_type: NUMBER(38,2)
         access_modifier: public_access
         sample_values:
-          - "4620.69"
-          - "4658.48"
-          - "4281.32"
+          - '4620.69'
+          - '4658.48'
+          - '4281.32'
       - name: AVG_MONTHLY_CHARGE
         description: The average monthly charge amount for a product or service.
         expr: AVG_MONTHLY_CHARGE
         data_type: FLOAT
         access_modifier: public_access
         sample_values:
-          - "42.03"
-          - "82.04"
-          - "67.2"
+          - '42.03'
+          - '82.04'
+          - '67.2'
       - name: AVG_TENURE_MONTHS
         description: The average tenure of customers or users measured in months.
         expr: AVG_TENURE_MONTHS
-        data_type: "NUMBER(38,2)"
+        data_type: NUMBER(38,2)
         access_modifier: public_access
         sample_values:
-          - "32.45"
-          - "41.20"
-          - "32.92"
+          - '32.45'
+          - '41.20'
+          - '32.92'
       - name: AVG_TOTAL_REVENUE
-        description: "The average total revenue generated, expressed as a floating-point value."
+        description: Average source-provided accumulated historical revenue for customers in the product adoption group. This is historical accumulated revenue, not current-period revenue.
         expr: AVG_TOTAL_REVENUE
         data_type: FLOAT
-        access_modifier: public_access
         sample_values:
-          - "1505.02"
-          - "3198.35"
-          - "4599.35"
+          - '1505.02'
+          - '3198.35'
+          - '4599.35'
       - name: CHURN_RATE
-        description: The rate at which customers discontinue or stop using a product over a given period.
+        synonyms:
+          - attrition rate
+          - churn percentage
+          - customer churn
+          - customer loss rate
+        description: Observed customer churn rate for the product adoption group, calculated as churned customers divided by customers in that adoption group. This measures customer churn, not discontinuation of the individual product.
         expr: CHURN_RATE
-        data_type: "NUMBER(20,4)"
+        data_type: NUMBER(20,4)
         access_modifier: public_access
         sample_values:
-          - "0.3165"
-          - "0.2433"
-          - "0.2438"
+          - '0.3165'
+          - '0.2433'
+          - '0.2438'
       - name: CUSTOMER_SHARE
         description: Share of the relevant customer population represented by the product adoption status.
         expr: CUSTOMER_SHARE
-        data_type: "NUMBER(25,4)"
+        data_type: NUMBER(25,4)
         access_modifier: public_access
         sample_values:
-          - "0.9032"
-          - "0.6551"
-          - "0.4218"
+          - '0.9032'
+          - '0.6551'
+          - '0.4218'
+verified_queries:
+  - name: '"What is the range and average customer lifetime value across each customer value segment?"'
+    sql: |-
+      SELECT
+          customer_value_segment,
+          COUNT(DISTINCT customer_id) AS customers,
+          MIN(cltv) AS min_cltv,
+          AVG(cltv) AS avg_cltv,
+          MAX(cltv) AS max_cltv
+      FROM customer_360_view
+      GROUP BY customer_value_segment
+      ORDER BY avg_cltv;
+    question: What is the range and average customer lifetime value across each customer value segment?
+    verified_at: 1786388016
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
+  - name: '"For products that customers have adopted, which ones have the highest churn rate, and how do they compare in terms of customer count, monthly charges, lifetime value, and tenure?"'
+    sql: |-
+      SELECT
+        product_name,
+        adoption_status,
+        customers,
+        churn_rate,
+        avg_monthly_charge,
+        avg_cltv,
+        avg_tenure_months
+      FROM
+        vw_product_adoption
+      WHERE
+        adoption_status = 'Yes'
+      ORDER BY
+        churn_rate DESC
+    question: For products that customers have adopted, which ones have the highest churn rate, and how do they compare in terms of customer count, monthly charges, lifetime value, and tenure?
+    verified_at: 1786388070
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
+  - name: '"For each contract type, at which tenure point do customers experience the highest churn rate (among cohorts of at least 200 customers)?"'
+    sql: |-
+      SELECT
+        dimension_name,
+        segment_value,
+        tenure_month,
+        customers_reaching_tenure,
+        churned_at_tenure,
+        churn_rate_at_tenure
+      FROM
+        vw_churn_by_tenure_segment
+      WHERE
+        dimension_name = 'Contract' QUALIFY ROW_NUMBER() OVER (
+          PARTITION BY dimension_name,
+          segment_value
+          ORDER BY
+            churn_rate_at_tenure DESC
+        ) = 1
+      ORDER BY
+        segment_value;
+    question: For each contract type, at which observed tenure month is the churn rate highest, and how many customers reached that tenure?
+    verified_at: 1786401957
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
+  - name: '"Which customer segments are driving the highest monthly revenue loss from churn, and what are their churn rates and overall contribution to churn?"'
+    sql: |-
+      SELECT
+          dimension_name,
+          segment_value,
+          total_customers,
+          churned_customers,
+          churn_rate,
+          churn_contribution,
+          churned_monthly_revenue
+      FROM vw_churn_segments
+      ORDER BY churned_monthly_revenue DESC;
+    question: Which customer segments have the highest monthly charges associated with churned customers, and what are their churn rates and contribution to total churn?
+    verified_at: 1786388296
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
 module_custom_instructions:
   sql_generation: |-
     Use governed business metrics defined in the semantic view whenever they are available rather than recreating equivalent calculations.
@@ -592,78 +662,3 @@ module_custom_instructions:
     If a user asks for historical cohort retention, cohort survival, or a true historical retention curve, clarify that the available dataset contains a customer snapshot and observed tenure, not historical monthly cohort snapshots.
 
     If a question requires data outside the available customer, churn, product, revenue, CLTV, tenure, location, contract, offer, payment method, or customer-status information, explain that the requested information is not available in this semantic view.
-verified_queries:
-  - name: '"What is the range and average customer lifetime value across each customer value segment?"'
-    sql: |-
-      SELECT
-          customer_value_segment,
-          COUNT(DISTINCT customer_id) AS customers,
-          MIN(cltv) AS min_cltv,
-          AVG(cltv) AS avg_cltv,
-          MAX(cltv) AS max_cltv
-      FROM customer_360_view
-      GROUP BY customer_value_segment
-      ORDER BY avg_cltv;
-    question: What is the range and average customer lifetime value across each customer value segment?
-    verified_at: 1786388016
-    verified_by: Juan Chiarella
-    use_as_onboarding_question: false
-  - name: "\"For products that customers have adopted, which ones have the highest churn rate, and how do they compare in terms of customer count, monthly charges, lifetime value, and tenure?\""
-    sql: |-
-      SELECT
-        product_name,
-        adoption_status,
-        customers,
-        churn_rate,
-        avg_monthly_charge,
-        avg_cltv,
-        avg_tenure_months
-      FROM
-        vw_product_adoption
-      WHERE
-        adoption_status = 'Yes'
-      ORDER BY
-        churn_rate DESC
-    question: "For products that customers have adopted, which ones have the highest churn rate, and how do they compare in terms of customer count, monthly charges, lifetime value, and tenure?"
-    verified_at: 1786388070
-    verified_by: Juan Chiarella
-    use_as_onboarding_question: false
-  - name: "\"For each contract type, at which tenure point do customers experience the highest churn rate (among cohorts of at least 200 customers)?\""
-    sql: |-
-      SELECT
-          dimension_name,
-          segment_value,
-          tenure_month,
-          customers_reaching_tenure,
-          churned_at_tenure,
-          churn_rate_at_tenure
-      FROM
-          vw_churn_by_tenure_segment
-      WHERE
-          dimension_name = 'Contract'
-      QUALIFY ROW_NUMBER() OVER (
-          PARTITION BY dimension_name, segment_value
-          ORDER BY churn_rate_at_tenure DESC
-      ) = 1
-      ORDER BY
-          segment_value;
-    question: "For each contract type, at which observed tenure month is the churn rate highest, and how many customers reached that tenure?"
-    verified_at: 1786388161
-    verified_by: Juan Chiarella
-    use_as_onboarding_question: false
-  - name: "\"Which customer segments are driving the highest monthly revenue loss from churn, and what are their churn rates and overall contribution to churn?\""
-    sql: |-
-      SELECT
-          dimension_name,
-          segment_value,
-          total_customers,
-          churned_customers,
-          churn_rate,
-          churn_contribution,
-          churned_monthly_revenue
-      FROM vw_churn_segments
-      ORDER BY churned_monthly_revenue DESC;
-    question: "Which customer segments have the highest monthly charges associated with churned customers, and what are their churn rates and contribution to total churn?"
-    verified_at: 1786388296
-    verified_by: Juan Chiarella
-    use_as_onboarding_question: false
