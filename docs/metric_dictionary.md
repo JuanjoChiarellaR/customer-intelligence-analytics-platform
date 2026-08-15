@@ -165,36 +165,28 @@ Observed churn rate among customers who reached a specific tenure month.
 **Formula:**  
 `CHURNED_AT_TENURE / CUSTOMERS_REACHING_TENURE`
 
+**Denominator:**  
+Customers whose observed tenure reached at least the selected tenure month.
+
 **Grain:**  
-Tenure month, optionally by segment.
+Tenure month, optionally by customer, product, or commercial segment.
+
+**Source:**  
+`ANALYTICS.VW_CHURN_BY_TENURE` and `ANALYTICS.VW_CHURN_BY_TENURE_SEGMENT`
 
 **Interpretation:**  
-Provides a cross-sectional approximation of how churn behaves across the customer lifecycle.
+Provides the best available cross-sectional approximation of how churn behaves across the customer lifecycle using the current customer snapshot. It can be used to identify observed churn peaks by tenure and compare whether those peaks change across customer or product segments.
 
 **Limitations:**  
-This is not a historical cohort retention curve or calendar-month churn rate. It is calculated from the latest available customer snapshot.
+This is not a historical cohort retention curve or a calendar-month churn rate. The dataset contains one customer snapshot rather than historical monthly snapshots.
+
+`CHURN_RATE_AT_TENURE` should always be interpreted together with `CUSTOMERS_REACHING_TENURE`. At higher tenure months, smaller customer populations can make individual monthly churn observations more volatile.
+
+Additional historical snapshots would be required to determine whether observed churn peaks are persistent over time and consistent across acquisition cohorts.
 
 ---
 
-## 9. Rolling 3-Month Churn Rate
-
-**Metric Name:** `ROLLING_3M_CHURN_RATE`
-
-**Business Definition:**  
-Three-month centered moving average of churn rate at tenure.
-
-**Formula:**  
-Average of the previous, current, and next tenure-month `CHURN_RATE_AT_TENURE`, where available.
-
-**Interpretation:**  
-Helps distinguish sustained lifecycle patterns from isolated monthly spikes.
-
-**Limitations:**  
-Used as a descriptive smoothing metric and does not replace the underlying observed churn rate.
-
----
-
-## 10. Customer Share
+## 9. Customer Share
 
 **Metric Name:** `CUSTOMER_SHARE`
 
@@ -209,7 +201,7 @@ Measures customer-base concentration.
 
 ---
 
-## 11. Product Adoption Rate
+## 10. Product Adoption Rate
 
 **Metric Name:** `PRODUCT_ADOPTION_RATE`
 
@@ -227,7 +219,7 @@ Eligibility must be considered when a product is not applicable to every custome
 
 ---
 
-## 12. Total Service Count
+## 11. Total Service Count
 
 **Metric Name:** `TOTAL_SERVICE_COUNT`
 
@@ -262,7 +254,7 @@ Service count does not imply equal economic or strategic value across products.
 
 ---
 
-## 13. Average Monthly Charge
+## 12. Average Monthly Charge
 
 **Metric Name:** `AVG_MONTHLY_CHARGE`
 
@@ -277,7 +269,7 @@ Customer services data.
 
 ---
 
-## 14. Total Monthly Charges
+## 13. Total Monthly Charges
 
 **Metric Name:** `TOTAL_MONTHLY_CHARGES`
 
@@ -292,7 +284,7 @@ Represents the current monthly billing amount associated with the observed custo
 
 ---
 
-## 15. Total Revenue
+## 14. Total Revenue
 
 **Metric Name:** `TOTAL_REVENUE`
 
@@ -310,7 +302,7 @@ This is accumulated historical revenue, not current-period revenue.
 
 ---
 
-## 16. Churned Monthly Revenue
+## 15. Churned Monthly Revenue
 
 **Metric Name:** `CHURNED_MONTHLY_REVENUE`
 
@@ -328,7 +320,7 @@ This is not called `Revenue at Risk` because the customers have already churned.
 
 ---
 
-## 17. Churned Historical Revenue
+## 16. Churned Historical Revenue
 
 **Metric Name:** `CHURNED_HISTORICAL_REVENUE`
 
@@ -346,7 +338,7 @@ Does not represent future revenue lost.
 
 ---
 
-## 18. Revenue Share
+## 17. Revenue Share
 
 **Metric Name:** `REVENUE_SHARE`
 
@@ -361,7 +353,7 @@ Measures economic concentration across customer segments.
 
 ---
 
-## 19. Average CLTV
+## 18. Average CLTV
 
 **Metric Name:** `AVG_CLTV`
 
@@ -379,7 +371,7 @@ Used as a relative customer-value indicator rather than an independently validat
 
 ---
 
-## 20. Customer Value Segment
+## 19. Customer Value Segment
 
 **Metric Name:** `CUSTOMER_VALUE_SEGMENT`
 
@@ -401,7 +393,7 @@ Customers with identical CLTV values may fall into adjacent quartiles because NT
 
 ---
 
-## 21. Average Tenure
+## 20. Average Tenure
 
 **Metric Name:** `AVG_TENURE_MONTHS`
 
@@ -413,7 +405,7 @@ Average observed customer tenure in months.
 
 ---
 
-## 22. Average Satisfaction Score
+## 21. Average Satisfaction Score
 
 **Metric Name:** `AVG_SATISFACTION_SCORE`
 
