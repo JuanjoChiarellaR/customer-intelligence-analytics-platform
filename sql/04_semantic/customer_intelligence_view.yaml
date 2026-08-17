@@ -277,6 +277,13 @@ tables:
           - '1'
           - '3'
     facts:
+      - name: CHURN_BY_TENURE_PRODUCT_DEPTH
+        description: Filters the churn-by-tenure analysis to records segmented by the 'Product Depth' dimension, which groups customers by the total number of services they have adopted. Use when questions ask about 'churn over tenure by number of services', 'churn timing by product depth', 'lifecycle churn patterns by service count', or 'how does the number of products a customer has affect churn over time'. Helps answer business questions about whether customers with more or fewer services churn earlier or later in their lifecycle.
+        expr: dimension_name = 'Product Depth'
+        data_type: BOOLEAN
+        access_modifier: public_access
+        labels:
+          - filter
       - name: CHURN_RATE_AT_TENURE
         synonyms:
           - churn at month
@@ -316,11 +323,12 @@ tables:
         description: Count of customers in the selected segment whose observed tenure reached at least the specified tenure month.
         expr: CUSTOMERS_REACHING_TENURE
         data_type: NUMBER(13,0)
-        default_aggregation: 1
+        access_modifier: public_access
         sample_values:
           - '3016'
           - '1458'
           - '661'
+        default_aggregation: 1
   - name: VW_CHURN_SEGMENTS
     description: The table contains customer churn analysis broken down by business segmentation dimensions. Each record represents a segment and includes customer volume, churn rate, contribution to total churn, average customer value, and historical and monthly revenue measures associated with customers already identified as churned.
     base_table:
@@ -415,14 +423,15 @@ tables:
         labels:
           - filter
       - name: CHURNED_HISTORICAL_REVENUE
-        description: Sum of accumulated historical revenue associated with customers already identified as churned within the segment. This does not represent future revenue loss.
+        description: The total historical revenue attributed to churned customers.
         expr: CHURNED_HISTORICAL_REVENUE
         data_type: FLOAT
-        default_aggregation: 1
+        access_modifier: public_access
         sample_values:
           - '2114547.83'
           - '865576.57'
           - '397729.2'
+        default_aggregation: 1
       - name: CHURNED_MONTHLY_REVENUE
         description: Sum of monthly charges associated with customers already identified as churned within the segment. This does not represent forecasted revenue at risk.
         expr: CHURNED_MONTHLY_REVENUE
@@ -513,9 +522,10 @@ tables:
           - '41.20'
           - '32.92'
       - name: AVG_TOTAL_REVENUE
-        description: Average source-provided accumulated historical revenue for customers in the product adoption group. This is historical accumulated revenue, not current-period revenue.
+        description: The average total revenue generated, expressed as a floating-point value.
         expr: AVG_TOTAL_REVENUE
         data_type: FLOAT
+        access_modifier: public_access
         sample_values:
           - '1505.02'
           - '3198.35'
@@ -543,27 +553,36 @@ tables:
           - '0.9032'
           - '0.6551'
           - '0.4218'
+      - name: NON_ADOPTED_CUSTOMERS
+        description: Filters the product adoption table to include only customers who have NOT adopted a given product or service (adoption_status = 'No'). Use when questions ask about 'customers who did not adopt', 'non-adopters', 'customers without a product', 'churn rate for non-adopters', or when comparing adopted vs. non-adopted customer behavior. Helps answer business questions about the churn rate, revenue, tenure, or lifetime value of customers who lack a specific product, enabling side-by-side comparison with adopters to assess the impact of product adoption on retention and value.
+        expr: adoption_status = 'No'
+        data_type: BOOLEAN
+        access_modifier: public_access
+        labels:
+          - filter
 verified_queries:
-  - name: '"What is the range and average customer lifetime value across each customer value segment?"'
+  - name: '"What is the range and average customer lifetime value across each customer value segment? Show the number of customers in each segment, minimum CLTV, average CLTV, and maximum CLTV."'
     sql: |-
       SELECT
-          customer_value_segment,
-          COUNT(DISTINCT customer_id) AS customers,
-          MIN(cltv) AS min_cltv,
-          AVG(cltv) AS avg_cltv,
-          MAX(cltv) AS max_cltv
-      FROM customer_360_view
-      GROUP BY customer_value_segment
-      ORDER BY avg_cltv;
-    question: What is the range and average customer lifetime value across each customer value segment?
-    verified_at: 1786388016
+        customer_value_segment,
+        COUNT(DISTINCT customer_id) AS customers,
+        MIN(cltv) AS min_cltv,
+        AVG(cltv) AS avg_cltv,
+        MAX(cltv) AS max_cltv
+      FROM
+        customer_360_view
+      GROUP BY
+        customer_value_segment
+      ORDER BY
+        avg_cltv;
+    question: What is the range and average customer lifetime value across each customer value segment? Show the number of customers in each segment, minimum CLTV, average CLTV, and maximum CLTV.
+    verified_at: 1786914045
     verified_by: Juan Chiarella
     use_as_onboarding_question: false
   - name: '"For products that customers have adopted, which ones have the highest churn rate, and how do they compare in terms of customer count, monthly charges, lifetime value, and tenure?"'
     sql: |-
       SELECT
         product_name,
-        adoption_status,
         customers,
         churn_rate,
         avg_monthly_charge,
@@ -576,47 +595,146 @@ verified_queries:
       ORDER BY
         churn_rate DESC
     question: For products that customers have adopted, which ones have the highest churn rate, and how do they compare in terms of customer count, monthly charges, lifetime value, and tenure?
-    verified_at: 1786388070
+    verified_at: 1786911861
     verified_by: Juan Chiarella
     use_as_onboarding_question: false
-  - name: '"For each contract type, at which tenure point do customers experience the highest churn rate (among cohorts of at least 200 customers)?"'
+  - name: '"For each contract type, identify the observed tenure month with the highest churn rate. Show the contract type, tenure month, number of customers who reached that tenure, number of customers who churned at that tenure, and the observed churn rate."'
     sql: |-
       SELECT
-        dimension_name,
-        segment_value,
+        segment_value AS contract_type,
         tenure_month,
         customers_reaching_tenure,
         churned_at_tenure,
         churn_rate_at_tenure
-      FROM
-        vw_churn_by_tenure_segment
-      WHERE
-        dimension_name = 'Contract' QUALIFY ROW_NUMBER() OVER (
-          PARTITION BY dimension_name,
-          segment_value
-          ORDER BY
-            churn_rate_at_tenure DESC
-        ) = 1
-      ORDER BY
-        segment_value;
-    question: For each contract type, at which observed tenure month is the churn rate highest, and how many customers reached that tenure?
-    verified_at: 1786401957
+      FROM vw_churn_by_tenure_segment
+      WHERE dimension_name = 'Contract'
+      QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY segment_value
+        ORDER BY churn_rate_at_tenure DESC
+      ) = 1
+      ORDER BY contract_type;
+    question: For each contract type, identify the observed tenure month with the highest churn rate. Show the contract type, tenure month, number of customers who reached that tenure, number of customers who churned at that tenure, and the observed churn rate.
+    verified_at: 1786912144
     verified_by: Juan Chiarella
     use_as_onboarding_question: false
-  - name: '"Which customer segments are driving the highest monthly revenue loss from churn, and what are their churn rates and overall contribution to churn?"'
+  - name: '"""""""""""""""Which customer segments have the highest monthly charges associated with churned customers? Show the segment, total customers, churned customers, churn rate, churn contribution, and monthly charges associated with churned customers, ranked from hig"'
     sql: |-
       SELECT
-          dimension_name,
-          segment_value,
-          total_customers,
-          churned_customers,
-          churn_rate,
-          churn_contribution,
-          churned_monthly_revenue
+        dimension_name,
+        segment_value,
+        total_customers,
+        churned_customers,
+        churn_rate,
+        churn_contribution,
+        churned_monthly_revenue
       FROM vw_churn_segments
       ORDER BY churned_monthly_revenue DESC;
-    question: Which customer segments have the highest monthly charges associated with churned customers, and what are their churn rates and contribution to total churn?
-    verified_at: 1786388296
+    question: Which customer segments have the highest monthly charges associated with churned customers? Show the segment, total customers, churned customers, churn rate, churn contribution, and monthly charges associated with churned customers, ranked from highest to lowest churned monthly charges.
+    verified_at: 1786912359
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
+  - name: '"Compare all contract types by observed churn rate and contribution to total churn. Show total customers, churned customers, churn rate, and churn contribution, and rank contract types from highest to lowest churn rate."'
+    sql: |-
+      SELECT
+        segment_value,
+        total_customers,
+        churned_customers,
+        churn_rate,
+        churn_contribution
+      FROM vw_churn_segments
+      WHERE dimension_name = 'Contract'
+      ORDER BY churn_rate DESC;
+    question: Compare all contract types by observed churn rate and contribution to total churn. Show total customers, churned customers, churn rate, and churn contribution, and rank contract types from highest to lowest churn rate.
+    verified_at: 1786912397
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
+  - name: |-
+      """""""""""""""For each product, compare the customer churn rate between customers who adopted the product (adoption_status = 'Yes') and customers who did not (adoption_status = 'No').
+
+      Show:
+      - the number of customers who adopted the product,
+      - the churn rate amo"
+    sql: |-
+      WITH adopted AS (
+        SELECT
+          product_name,
+          churn_rate AS adopted_churn_rate,
+          customers AS adopted_customers
+        FROM
+          vw_product_adoption
+        WHERE
+          adoption_status = 'Yes'
+      ),
+      not_adopted AS (
+        SELECT
+          product_name,
+          churn_rate AS not_adopted_churn_rate,
+          customers AS not_adopted_customers
+        FROM
+          vw_product_adoption
+        WHERE
+          adoption_status = 'No'
+      )
+      SELECT
+        a.product_name,
+        a.adopted_customers,
+        a.adopted_churn_rate,
+        n.not_adopted_customers,
+        n.not_adopted_churn_rate,
+        (a.adopted_churn_rate - n.not_adopted_churn_rate) AS churn_rate_gap
+      FROM
+        adopted AS a
+        JOIN not_adopted AS n ON a.product_name = n.product_name
+      ORDER BY
+        churn_rate_gap ASC
+        /* Generated by Cortex Analyst (request_id: 930f77fb-0d04-4797-8c0a-b1722235fa73) */
+    question: |-
+      For each product, compare the customer churn rate between customers who adopted the product (adoption_status = 'Yes') and customers who did not (adoption_status = 'No').
+
+      Show:
+      - the number of customers who adopted the product,
+      - the churn rate among customers who adopted the product,
+      - the number of customers who did not adopt the product,
+      - the churn rate among customers who did not adopt the product,
+      - and the churn rate gap, calculated as adopted churn rate minus non-adopted churn rate.
+
+      Rank products from the most negative to the most positive churn rate gap.
+    verified_at: 1786906047
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
+  - name: '"How does churn rate, number of churned customers, and churn contribution differ across customer value segments?"'
+    sql: |-
+      SELECT
+        segment_value,
+        total_customers,
+        churned_customers,
+        churn_rate,
+        churn_contribution
+      FROM
+        vw_churn_segments
+      WHERE
+        dimension_name = 'Customer Value'
+      ORDER BY
+        churn_rate DESC NULLS LAST
+        /* Generated by Cortex Analyst (request_id: b630a7c2-6534-4176-bdb4-6108842aad6b) */
+    question: How does churn rate, number of churned customers, and churn contribution differ across customer value segments?
+    verified_at: 1786835127
+    verified_by: Juan Chiarella
+    use_as_onboarding_question: false
+  - name: '"How does churn rate evolve across each month of customer tenure, aggregated across all contract types?"'
+    sql: |-
+      SELECT
+          tenure_month,
+          SUM(customers_reaching_tenure) AS customers_reaching_tenure,
+          SUM(churned_at_tenure) AS churned_at_tenure,
+          SUM(churned_at_tenure)
+              / NULLIF(SUM(customers_reaching_tenure), 0) AS churn_rate_at_tenure
+      FROM vw_churn_by_tenure_segment
+      WHERE dimension_name = 'Contract'
+      GROUP BY tenure_month
+      ORDER BY tenure_month ASC;
+    question: How does observed churn rate vary across each customer tenure month, aggregated across all contract types?
+    verified_at: 1786835530
     verified_by: Juan Chiarella
     use_as_onboarding_question: false
 module_custom_instructions:
@@ -653,12 +771,206 @@ module_custom_instructions:
 
     For tenure analysis, use observed tenure month terminology rather than acquisition cohort terminology unless historical cohort data is explicitly available.
   question_categorization: |-
-    If a user asks for the “biggest churn problem” without specifying what “biggest” means, consider the question ambiguous and ask whether they mean:
+    Treat the following types of questions as requiring clarification or scope disclosure before answering.
+
+    1. AMBIGUOUS DEFINITIONS OF "BIGGEST", "WORST", OR "MAIN" CHURN PROBLEM
+
+    If the user asks for the "biggest churn problem", "worst churn problem", "main churn issue", "largest churn issue", or similar wording without specifying the metric, classify the request as UNCLEAR.
+
+    RETURN NO SQL.
+
+    DO NOT answer with a ranked table.
+    DO NOT provide a broad overview.
+    DO NOT choose a definition of "biggest" automatically.
+    DO NOT combine churn rate, churned customers, churn contribution, and financial measures into a single answer.
+
+    Instead, ask the user to clarify which measure they want:
     - highest churn rate,
     - highest number of churned customers,
     - highest contribution to total churn,
-    - or highest monthly charges associated with churned customers.
+    - or highest monthly charges associated with customers already identified as churned.
 
-    If a user asks for historical cohort retention, cohort survival, or a true historical retention curve, clarify that the available dataset contains a customer snapshot and observed tenure, not historical monthly cohort snapshots.
+    Only answer after the user specifies the intended measure.
 
-    If a question requires data outside the available customer, churn, product, revenue, CLTV, tenure, location, contract, offer, payment method, or customer-status information, explain that the requested information is not available in this semantic view.
+    Do not answer the business question until the user specifies the intended measure.
+
+    2. FORWARD-LOOKING REVENUE OR FINANCIAL RISK QUESTIONS
+
+    If the user asks for "revenue at risk", "future revenue loss", "expected revenue loss", "forecasted churn revenue", "future churn impact", "revenue we may lose", or any other forward-looking financial estimate related to churn, do not substitute existing historical or current churn-associated measures for the requested concept.
+
+    The available semantic model does not contain a forward-looking revenue-at-risk model or forecast.
+
+    Do not interpret:
+    - CHURNED_MONTHLY_REVENUE,
+    - CHURNED_HISTORICAL_REVENUE,
+    - TOTAL_HISTORICAL_REVENUE,
+    or MONTHLY_CHARGE
+
+    as forecasted future revenue loss.
+
+    Explain that the available measures are:
+    - monthly charges associated with customers already identified as churned, and
+    - accumulated historical revenue associated with customers already identified as churned.
+
+    Ask whether the user wants to analyze one of those available measures instead.
+
+    3. HISTORICAL COHORT RETENTION, SURVIVAL, OR LONGITUDINAL QUESTIONS
+
+    If the user asks for:
+    - historical cohort retention,
+    - cohort retention curves,
+    - cohort survival,
+    - survival analysis,
+    - retention by acquisition cohort,
+    - churn by acquisition cohort,
+    - longitudinal retention,
+    - historical month-over-month churn progression,
+    or a true historical retention curve,
+
+    explain that the available dataset contains a customer snapshot with observed tenure and does not contain historical monthly customer snapshots or acquisition cohort histories.
+
+    RETURN NO SQL for the original request.
+
+    Do not describe CHURN_RATE_AT_TENURE as cohort retention, cohort survival, survival analysis, historical retention, or a true retention curve.
+
+    Do not automatically answer with a proxy.
+
+    Ask the user whether they want the closest available alternative instead:
+    - a cross-sectional lifecycle churn view by observed tenure, including TENURE_MONTH, CUSTOMERS_REACHING_TENURE, CHURNED_AT_TENURE, and CHURN_RATE_AT_TENURE.
+
+    Only provide that alternative if the user explicitly agrees.
+
+    4. HISTORICAL TIME-PERIOD QUESTIONS NOT SUPPORTED BY THE SNAPSHOT
+
+    If the user asks for churn, revenue, acquisition, retention, customer count, or another business metric for a historical period such as:
+    - last year,
+    - last quarter,
+    - previous month,
+    - year over year,
+    - month over month,
+    - before vs after,
+    - trend over time,
+
+    and that historical period is not explicitly represented in the semantic model, explain that the available data is a snapshot and does not support that historical comparison.
+
+    Do not infer or fabricate historical values.
+
+    5. FUTURE CHURN PREDICTION OR CUSTOMER RISK QUESTIONS
+
+    If the user asks:
+    - which customers will churn,
+    - which customers are likely to churn,
+    - future churn probability,
+    - churn prediction,
+    - churn risk score,
+    - expected future churn,
+    or similar predictive questions,
+
+    explain that the current semantic model contains observed churn outcomes and descriptive analytics, not a predictive churn model.
+
+    Do not use observed churn rates, CLTV, tenure, product adoption, satisfaction, or other descriptive variables as if they were predicted churn probabilities.
+
+    Ask whether the user wants descriptive analysis of observed churn patterns instead.
+
+    6. CLTV METHODOLOGY OR FUTURE VALUE QUESTIONS
+
+    If the user asks how CLTV was calculated, what model produced CLTV, what future revenue CLTV predicts, or requests the underlying CLTV formula, explain that CLTV is source-provided and the underlying calculation methodology is not available in the source dataset.
+
+    Do not invent, reconstruct, or infer the CLTV methodology.
+
+    CLTV may be used only as a source-provided relative customer value indicator.
+
+    7. CAUSAL QUESTIONS
+
+    If the user asks whether a product, service, offer, payment method, contract type, satisfaction level, customer value segment, or another observed characteristic "causes", "reduces", "increases", "drives", or "prevents" churn, do not present an observed association as a causal effect.
+
+    Clarify that the available data supports descriptive associations only unless a causal experiment or appropriate causal design is explicitly available.
+
+    Prefer wording such as:
+    - associated with higher observed churn,
+    - associated with lower observed churn,
+    - observed difference in churn,
+    - observed pattern in the snapshot.
+
+    Do not use causal language such as:
+    - causes churn,
+    - prevents churn,
+    - reduces churn by X percentage points,
+    - increases churn by X percentage points.
+
+    8. PRODUCT ADOPTION VS PRODUCT CANCELLATION
+
+    If the user asks about churn associated with products or services, interpret churn as customer churn among customers in a product adoption group.
+
+    Do not interpret CHURN_RATE in VW_PRODUCT_ADOPTION as the rate at which customers canceled or discontinued that individual product.
+
+    If the user specifically asks for product cancellation or product-level discontinuation, explain that the available semantic model does not contain product cancellation events.
+
+    9. SMALL-SAMPLE OR LATE-TENURE QUESTIONS
+
+    If the user asks for the highest churn rate by tenure or lifecycle month, do not automatically exclude observations based on an arbitrary customer-count threshold.
+
+    Return or consider CUSTOMERS_REACHING_TENURE together with CHURN_RATE_AT_TENURE.
+
+    If the supporting customer population is small, explain that the observed rate may be more volatile.
+
+    Do not describe a small-base observation as invalid solely because the base is small.
+
+    Do not apply a minimum sample-size threshold unless the user explicitly requests one.
+
+    10. RATE, VOLUME, CONTRIBUTION, AND FINANCIAL MEASURES
+
+    Do not treat the following as interchangeable:
+    - churn rate,
+    - number of churned customers,
+    - churn contribution,
+    - monthly charges associated with churned customers,
+    - historical revenue associated with churned customers.
+
+    If the user's wording makes it unclear which one they mean, ask for clarification rather than selecting one automatically.
+
+    11. REPORTED CHURN REASONS
+
+    If the user asks why customers churned and the answer relies on CHURN_CATEGORY or CHURN_REASON, describe these as reported or source-provided churn reasons.
+
+    Do not present reported churn reasons as statistically proven causal drivers.
+
+    12. OUT-OF-SCOPE DATA QUESTIONS
+
+    If a question requires information that is not available in the semantic view, explain that the requested information is outside the scope of the available customer intelligence data.
+
+    Available areas include:
+    - customer profile,
+    - churn,
+    - customer status,
+    - product/service adoption,
+    - contract,
+    - payment method,
+    - offer,
+    - revenue,
+    - monthly charges,
+    - source-provided CLTV,
+    - tenure,
+    - customer value,
+    - location,
+    - satisfaction,
+    - reported churn reasons,
+    - lifecycle analysis based on observed tenure.
+
+    Do not invent missing data or infer unsupported fields.
+
+    13. META-QUESTIONS ABOUT CORTEX ANALYST, LOGS, REQUEST IDS, OR SYSTEM BEHAVIOR
+
+    If the user asks why Cortex Analyst behaved a certain way, why a previous request was classified in a specific way, why a particular Request ID produced a result, or asks about internal logs, monitoring history, request metadata, or system reasoning, do not attempt to answer from the business semantic model.
+
+    Explain that the semantic model contains business data, not Cortex operational metadata or internal reasoning history.
+
+    Do not claim that a previous request was or was not classified a certain way unless that information is explicitly available in the current query context.
+
+    14. DEFAULT BEHAVIOR FOR SUPPORTED BUSINESS QUESTIONS
+
+    When the question is clear, within scope, and supported by the available data, proceed with analysis using the governed semantic model.
+
+    Prefer governed metrics and the most appropriate analytical logical table.
+
+    Do not add unsupported assumptions merely to make a question answerable.

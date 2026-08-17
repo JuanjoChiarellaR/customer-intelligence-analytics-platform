@@ -2,7 +2,7 @@
 
 An end-to-end customer intelligence platform built on Snowflake, using telecom churn data to demonstrate how raw customer data becomes a governed analytical model, and how that governed model — not the AI layer — is what natural-language analytics should rely on.
 
-Churn is the vehicle. The actual subject is the pipeline: **raw data → governed data model → analytical marts → metric governance → semantic layer → Cortex Analyst → AI validation → agent → business interface.** Several of these stages are fully built in Snowflake SQL and a working Cortex Analyst semantic model; the AI-agent, AI-validation, and Streamlit stages are scoped and documented but not yet implemented. Both states are called out explicitly throughout this document.
+Churn is the vehicle. The actual subject is the pipeline: **raw data → governed data model → analytical marts → metric governance → semantic layer → Cortex Analyst → AI validation → agent → business interface.** Every stage of that pipeline is now implemented — SQL data model, semantic view, Cortex Analyst (evaluated to 100% native accuracy), a Cortex Agent with orchestration guardrails, and a Streamlit executive dashboard. What's not yet done is narrower and called out explicitly where it applies: two open evaluation test cases, and the Agent not yet being wired into the dashboard. See [Current status and roadmap](#current-status-and-roadmap).
 
 ---
 
@@ -19,9 +19,9 @@ Churn is the vehicle. The actual subject is the pipeline: **raw data → governe
 9. [CLTV governance](#cltv-governance)
 10. [Semantic layer](#semantic-layer)
 11. [Cortex Analyst and AI analytics](#cortex-analyst-and-ai-analytics)
-12. [AI validation strategy (planned)](#ai-validation-strategy-planned)
-13. [Cortex Agent (planned)](#cortex-agent-planned)
-14. [Business interface (planned)](#business-interface-planned)
+12. [AI validation and evaluation](#ai-validation-and-evaluation)
+13. [Cortex Agent](#cortex-agent)
+14. [Business interface](#business-interface)
 15. [Key analytical insights](#key-analytical-insights)
 16. [Repository structure](#repository-structure)
 17. [Technology stack](#technology-stack)
@@ -42,10 +42,10 @@ Most churn portfolio projects stop at a dashboard. This one is built around a di
 5. Encode business semantics into a machine-readable contract (Snowflake Semantic View).
 6. Provide trusted, manually verified query examples (Cortex Analyst verified queries).
 7. Add a natural-language interface on top of all of the above (Cortex Analyst).
-8. Validate AI-generated answers against deterministic analytical truth (planned).
-9. Only then expand toward autonomous agents and a user-facing application (planned).
+8. Validate AI-generated answers against deterministic analytical truth.
+9. Expand toward an orchestration agent and a user-facing application.
 
-Steps 1–7 are implemented in this repository. Steps 8 and 9 are scoped but not yet built — see [Current status and roadmap](#current-status-and-roadmap). The guiding principle is: **AI should consume governed analytical truth, not recreate business logic independently.**
+All nine steps now have implemented components in this repository, though not all are finished — evaluation coverage has two open items, and the Cortex Agent is not yet wired into the Streamlit dashboard. See [Current status and roadmap](#current-status-and-roadmap) for exactly what remains. The guiding principle throughout is: **AI should consume governed analytical truth, not recreate business logic independently.**
 
 ---
 
@@ -90,15 +90,18 @@ flowchart TD
     E --> F["Metric governance<br/>metric_dictionary.md"]:::done
     F --> G["SEMANTIC schema<br/>Cortex Analyst semantic view"]:::done
     G --> H["Cortex Analyst<br/>natural-language SQL"]:::done
-    H --> I["AI output validation<br/>golden question set"]:::planned
-    I --> J["Cortex Agent<br/>orchestration + guardrails"]:::planned
-    J --> K["Business interface<br/>Streamlit in Snowflake"]:::planned
+    H --> I["Evaluation & guardrails<br/>native evals + manual suite"]:::partial
+    H --> J["Cortex Agent<br/>orchestration + guardrails"]:::done
+    J --> K["Business interface<br/>Streamlit dashboard"]:::done
+    E --> K
 
     classDef done fill:#e6f4ea,stroke:#34a853,stroke-width:1.5px,color:#1a1a1a;
-    classDef planned fill:#fef7e0,stroke:#f9ab00,stroke-width:1.5px,stroke-dasharray:5 5,color:#1a1a1a;
+    classDef partial fill:#fff8e1,stroke:#f9ab00,stroke-width:1.5px,color:#1a1a1a;
 ```
 
-🟢 Solid nodes are implemented and runnable in Snowflake today. 🟡 Dashed nodes (AI validation, Cortex Agent, business interface) are scoped in `docs/project_scope.md` but have no code or objects behind them yet — see [Current status and roadmap](#current-status-and-roadmap) for what that means concretely.
+🟢 Solid green nodes are implemented and running in Snowflake today. 🟡 Amber marks evaluation and guardrail testing as documented and *partially* automated — Snowflake's native Cortex Analyst Evaluations are automated (100% accuracy at v1.2), while the broader 14-test-case business/guardrail suite is currently run manually.
+
+Two things worth reading carefully in this diagram: the edge from `ANALYTICS marts` straight to `Business interface` reflects that the Streamlit dashboard currently queries the ANALYTICS marts directly with SQL — it does not yet route through the Cortex Agent (see [Current status and roadmap](#current-status-and-roadmap)). And the Cortex Agent orchestrates Cortex Analyst as its one tool rather than bypassing it. A fuller version of this diagram, with status detail per stage, lives in [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
@@ -207,6 +210,8 @@ The Snowflake Semantic View definition lives at [`sql/04_semantic/customer_intel
 
 **Four logical tables** are exposed: `CUSTOMER_360_VIEW`, `VW_CHURN_SEGMENTS`, `VW_PRODUCT_ADOPTION`, and `VW_CHURN_BY_TENURE_SEGMENT`. (`VW_EXECUTIVE_KPIS`, `VW_PRODUCT_DEPTH`, `VW_CUSTOMER_VALUE`, `VW_CHURN_REASONS`, and `VW_CHURN_BY_TENURE` exist as marts but aren't wired into the semantic layer yet — the ANALYTICS layer is broader than what Cortex Analyst currently sees.)
 
+Access to Cortex, the semantic view, and evaluation objects runs through a dedicated project role rather than broad or admin access: [`sql/00_setup/02_project_role_permissions.sql`](sql/00_setup/02_project_role_permissions.sql) grants `CUSTOMER_INTELLIGENCE_ROLE` `SNOWFLAKE.CORTEX_USER`, schema/object `SELECT` across RAW/CORE/ANALYTICS/VALIDATION, and `CREATE`/`SELECT`/`REFERENCES`/`MONITOR` on the semantic view — the same role used everywhere else in this platform, not a separate admin path.
+
 **Governed metrics** are formally defined once, on `CUSTOMER_360_VIEW`, and reused rather than redefined per table:
 
 | Metric | Expression |
@@ -224,14 +229,18 @@ The Snowflake Semantic View definition lives at [`sql/04_semantic/customer_intel
 
 **Synonyms** are attached to key fields (e.g. `CHURN_RATE` ↔ "attrition rate," "churn percentage," "customer loss rate"; `TENURE_IN_MONTHS` ↔ "customer tenure," "months since joining"; `TOTAL_SERVICE_COUNT` ↔ "product depth," "service depth") so Cortex Analyst can map everyday business language onto the governed field names instead of requiring exact terminology.
 
-**Named filters** currently defined: `CONTRACT_CHURN_BY_TENURE` (`dimension_name = 'Contract'`) and `CHURN_SEGMENTS_BY_CUSTOMER_VALUE` (`dimension_name = 'Customer Value'`). There is deliberately **no sample-size threshold filter** — an earlier version of this semantic view included an opt-in "sufficient sample" filter requiring at least 200 customers at a given tenure month, and it was removed. The methodology instead always exposes `CUSTOMERS_REACHING_TENURE` alongside `CHURN_RATE_AT_TENURE` and asks the reader (human or AI) to apply judgment about small-population volatility, rather than silently hiding or arbitrarily gating low-volume observations.
+**Named filters** currently defined: `CONTRACT_CHURN_BY_TENURE` (`dimension_name = 'Contract'`), `CHURN_BY_TENURE_PRODUCT_DEPTH` (`dimension_name = 'Product Depth'`), `CHURN_SEGMENTS_BY_CUSTOMER_VALUE` (`dimension_name = 'Customer Value'`), and `NON_ADOPTED_CUSTOMERS` (`adoption_status = 'No'`, for explicitly comparing customers who did not adopt a product). There is deliberately **no sample-size threshold filter** — an earlier version of this semantic view included an opt-in "sufficient sample" filter requiring at least 200 customers at a given tenure month, and it was removed. The methodology instead always exposes `CUSTOMERS_REACHING_TENURE` alongside `CHURN_RATE_AT_TENURE` and asks the reader (human or AI) to apply judgment about small-population volatility, rather than silently hiding or arbitrarily gating low-volume observations.
 
-**Verified queries** — four manually reviewed, hand-corrected question/SQL pairs used as trusted examples for Cortex Analyst:
+**Verified queries** — eight manually reviewed, hand-corrected question/SQL pairs used as trusted examples for Cortex Analyst (previously 4 were committed here; the semantic view YAML has since been re-exported from Snowflake and this gap is now closed):
 
-1. What is the range and average CLTV across each customer value segment?
+1. What is the range and average CLTV across each customer value segment (customers, min/avg/max CLTV)?
 2. For products that customers have adopted, which have the highest churn rate, and how do they compare on customer count, monthly charges, CLTV, and tenure?
-3. For each contract type, at which observed tenure month is the churn rate highest, and how many customers reached that tenure?
-4. Which customer segments have the highest monthly charges associated with churned customers, and what are their churn rates and contribution to total churn?
+3. For each contract type, at which observed tenure month is the churn rate highest, with the supporting and churned population?
+4. Which customer segments have the highest monthly charges associated with churned customers, ranked with churn rate and churn contribution?
+5. How do all contract types compare by observed churn rate and contribution to total churn?
+6. For each product, what is the churn-rate gap between customers who adopted it and customers who did not, ranked most-negative to most-positive?
+7. How does churn rate, churned-customer count, and churn contribution differ across customer value segments?
+8. How does observed churn rate vary across each tenure month, aggregated across all contract types?
 
 **Guardrail instructions** (`module_custom_instructions` in the YAML) constrain how Cortex Analyst is allowed to answer. A representative sample, quoted directly from the semantic model:
 
@@ -245,7 +254,7 @@ The Snowflake Semantic View definition lives at [`sql/04_semantic/customer_intel
 >
 > "Do not infer causality from observed correlations or segment differences. Describe them as associations or observed patterns unless the available data explicitly supports causal conclusions."
 
-There is also explicit **question-categorization logic**: if a user asks for the "biggest churn problem" without specifying what "biggest" means, the model is instructed to treat it as ambiguous and clarify whether they mean highest churn rate, highest churned-customer volume, highest contribution to total churn, or highest monthly charges associated with churned customers. If a user asks for cohort retention or a historical retention curve, the model is instructed to disclose that the dataset is a snapshot rather than fabricate an answer.
+There is also explicit **question-categorization logic** — 14 numbered rules covering when Cortex Analyst must clarify or disclose a limitation before generating SQL, rather than guessing. A few representative ones: an ambiguous "biggest churn problem" question returns no SQL and asks whether the user means highest rate, highest volume, highest contribution, or highest churned monthly charges; a forward-looking "revenue at risk" question is refused rather than answered with a substitute metric; a cohort-retention or "last year" question discloses the snapshot limitation instead of fabricating a value; and a product-cancellation question is distinguished from customer churn among adopters. The full rule set is in `sql/04_semantic/customer_intelligence_view.yaml`'s `question_categorization` block.
 
 ---
 
@@ -253,28 +262,42 @@ There is also explicit **question-categorization logic**: if a user asks for the
 
 With the semantic view deployed, Snowflake Cortex Analyst can answer natural-language questions directly against governed metrics, dimensions, and verified query patterns — without users writing SQL. The point of this layer is not to demonstrate text-to-SQL as a novelty; it's to test whether a natural-language interface can operate reliably **on top of** governed analytical marts, documented business semantics, trusted examples, and explicit methodological limitations, rather than reasoning about the raw tables from scratch each time.
 
----
-
-## AI validation strategy (planned)
-
-**Not yet implemented** — `sql/06_validation/` does not exist in the repository yet. The intended approach is a golden question set covering basic KPI questions, segmentation questions, product-adoption questions, lifecycle questions, value-segmentation questions, deliberately ambiguous questions, methodological traps, and out-of-scope temporal questions — evaluated on logical table selection, metric selection, generated SQL, numerical correctness, business interpretation, and adherence to the guardrails above.
-
-Two representative methodological traps the validation set is designed to catch:
-
-- *"What is the revenue at risk from churn?"* — expected behavior is to explain that the dataset shows monthly charges associated with customers **already** identified as churned, not a forward-looking revenue-at-risk estimate.
-- *"Show me the cohort retention curve."* — expected behavior is to explain that the dataset lacks the historical monthly snapshots required for true cohort retention, and to offer the cross-sectional lifecycle-by-tenure view instead.
+**This was evaluation-driven, not assumed to work.** Snowflake's native Cortex Analyst Evaluations were run against the semantic view's Verified Queries: **50%** accuracy at baseline (4 of 8), rising to **88%** after correcting Verified Query output specifications, and **100%** (8 of 8, zero regressions) at v1.2 after correcting the remaining CLTV Verified Query — with observed latency around P50 ≈ 4.0s / P95 ≈ 4.6s. Manual root-cause analysis found the early failures were driven by how precisely the Verified Query ground truth specified expected output, not by errors in the underlying analytical marts or metrics. Full detail: [`docs/cortex_analyst_evaluation_results.md`](docs/cortex_analyst_evaluation_results.md).
 
 ---
 
-## Cortex Agent (planned)
+## AI validation and evaluation
 
-**Not yet implemented** — `sql/05_agent/` does not exist in the repository. The intended role of a Cortex Agent here is not to duplicate Cortex Analyst, but to orchestrate around it: understand user intent, route structured questions to Cortex Analyst, enforce the same business and methodological guardrails at the orchestration layer, surface limitations rather than papering over them, and leave room for additional tools later. Cortex Search is explicitly out of scope unless a genuine unstructured data source is added — there's no reason to introduce it while every source here is structured.
+Two complementary evaluation efforts exist today. Neither is the automated golden-test-set pipeline originally envisioned in `sql/06_validation/` (that directory is still empty — see [roadmap](#current-status-and-roadmap)); both are real, run, and documented.
+
+**Native Snowflake Cortex Analyst Evaluations** — SQL-reproduction accuracy against the semantic view's Verified Queries. Reached **100%** (8 of 8, zero regressions) at v1.2. Full progression and methodology: [`docs/cortex_analyst_evaluation_results.md`](docs/cortex_analyst_evaluation_results.md).
+
+**A manual 14-test-case business/guardrail suite** ([`docs/cortex_analyst_evaluation_plan.md`](docs/cortex_analyst_evaluation_plan.md)) covering basic KPIs, segmentation, product adoption, lifecycle/tenure, ambiguous questions, and methodological traps — evaluated on logical table selection, metric selection, generated SQL, numerical correctness, business interpretation, and guardrail adherence. Current status: 11 of 14 pass, 1 is an explicit Analyst-fails/Agent-passes case, 1 remains a genuine fail, and 1 is still pending. Two representative methodological traps in that suite:
+
+- *"What is the revenue at risk from churn?"* — expected (and observed, after guardrail refinement) behavior is to explain that the dataset shows monthly charges associated with customers **already** identified as churned, not a forward-looking revenue-at-risk estimate.
+- *"What was the churn rate last year?"* — Cortex Analyst alone acknowledges the snapshot limitation in prose but still returns the current churn rate as if it answered the question (**FAIL**); routed through the Cortex Agent, the same question correctly returns only the disclosure (**PASS**) — see [Cortex Agent](#cortex-agent).
+
+The project deliberately does not treat "make every test pass by adding more prompt instructions" as the goal — a failing test can reveal a real product limitation, and the plan doc records those as findings rather than hiding them. The ambiguous-question test (T07) and the product-cancellation-misinterpretation test (T14) remain open for exactly that reason.
 
 ---
 
-## Business interface (planned)
+## Cortex Agent
 
-**Not yet implemented** — `streamlit/` exists as an empty folder. The intended scope is a Streamlit-in-Snowflake app exposing executive KPIs, segmentation/product/lifecycle exploration, and a natural-language question interface backed by Cortex Analyst.
+`CUSTOMER_INTELLIGENCE.SEMANTIC.CUSTOMER_INTELLIGENCE_AGENT` is implemented, configured in [`sql/05_agent/01_configure_customer_intelligence_agent.sql`](sql/05_agent/01_configure_customer_intelligence_agent.sql). Its role is not to duplicate Cortex Analyst, but to orchestrate around it: the Agent has a single tool, `analyst_customer_intelligence` (type `cortex_analyst_text_to_sql`), pointed at the Customer Intelligence semantic view and executing on `CUSTOMER_INTELLIGENCE_WH`. An earlier attempt to add a second tool of type `cortex_analyst_sql_exec` was rejected outright by Snowflake (`"Tool type cortex_analyst_sql_exec is not valid"`) — the single text-to-SQL tool both generates and executes.
+
+On top of that tool, the Agent's response instructions re-enforce the same guardrails already encoded in the semantic view (unsupported historical periods, predictive churn, cohort/survival analysis, causal interpretation, future revenue-at-risk, unknown CLTV methodology, ambiguous questions, observed-vs-predicted framing) at the orchestration layer. This mattered concretely: on *"What was the churn rate last year?"*, Cortex Analyst alone fails (see [AI validation and evaluation](#ai-validation-and-evaluation)), while the Agent passes — evidence that guardrail *instructions* in a semantic view are not always sufficient, and guardrail *enforcement* at an orchestration layer can catch what they miss.
+
+Current limitations, stated plainly: no Cortex Search Service (all data here is structured; Search is out of scope unless a genuine unstructured source is added), no Skills, no MCP integration. Full detail: [`docs/cortex_agent.md`](docs/cortex_agent.md).
+
+---
+
+## Business interface
+
+The Executive Customer Intelligence Dashboard is implemented as a Streamlit-in-Snowflake app: [`streamlit/streamlit_app.py`](streamlit/streamlit_app.py). It queries the ANALYTICS marts directly (the same governed views the semantic layer uses) across five sections: Executive KPIs, Contract Churn Performance, Customer Value Segments, Product Adoption & Churn, and Lifecycle. Permissions to create it were granted in [`sql/00_setup/03_streamlit_permissions.sql`](sql/00_setup/03_streamlit_permissions.sql) (`CREATE STREAMLIT` on the ANALYTICS schema, scoped to the same `CUSTOMER_INTELLIGENCE_ROLE` used everywhere else).
+
+![Executive KPIs and Contract Churn Performance](assets/dashboard-executive-kpis-contract-churn.png)
+
+Two things worth being precise about: the Customer Value Segments section reuses `VW_CHURN_SEGMENTS` filtered to `DIMENSION_NAME = 'Customer Value'` — the same generic segmentation mart used for Contract Churn Performance — rather than the separate `VW_CUSTOMER_VALUE` mart. And the dashboard does not yet include a Cortex Agent chat interface; it queries SQL directly rather than routing through the Agent (see the [Architecture](#architecture) diagram note). The remaining three sections (Customer Value Segments, Product Adoption & Churn, Lifecycle) are captured in [`docs/dashboard.md`](docs/dashboard.md#screenshots).
 
 ---
 
@@ -307,23 +330,31 @@ customer-intelligence-analytics-platform/
 ├── data/
 │   ├── README.md                # currently empty
 │   ├── raw/                     # gitignored — source .xlsx files + classic reference CSV
-│   └── processed/                # gitignored — CSVs converted from raw/
+│   ├── processed/                # gitignored — CSVs converted from raw/
+│   └── sample/                   # currently empty — unclear purpose, flagged for cleanup
 ├── docs/
-│   ├── project_scope.md         # original scope document (aspirational — some named objects, e.g. VW_REVENUE_RISK, were never built; code is the source of truth)
-│   └── metric_dictionary.md     # governed metric definitions + analytical principles
+│   ├── project_scope.md                      # original scope document (aspirational — some named objects, e.g. VW_REVENUE_RISK, were never built; code is the source of truth)
+│   ├── metric_dictionary.md                  # governed metric definitions + analytical principles
+│   ├── architecture.md                       # detailed architecture diagram + per-stage status
+│   ├── cortex_analyst_evaluation_plan.md     # 14-test-case manual business/guardrail evaluation suite
+│   ├── cortex_analyst_evaluation_results.md  # native Cortex Analyst Evaluations progression (50%→100%)
+│   ├── cortex_agent.md                       # Cortex Agent purpose, architecture, guardrails
+│   └── dashboard.md                          # Streamlit dashboard purpose, sections, marts used
 ├── python/
 │   └── convert_xlsx_to_csv.py   # xlsx → csv batch conversion utility
 ├── sql/
-│   ├── 00_setup/                # role, warehouse, database, 5 schemas
+│   ├── 00_setup/                # role, warehouse, database, 5 schemas, project-role + Streamlit permissions
 │   ├── 01_ingestion/            # RAW table DDL + 11 data quality checks
 │   ├── 02_transformation/       # CORE layer: 4 entity tables + CUSTOMER_360_VIEW + validation
 │   ├── 03_marts/                # ANALYTICS layer: 9 purpose-built views
-│   └── 04_semantic/
-│       └── customer_intelligence_view.yaml   # Cortex Analyst semantic model
-└── streamlit/                   # currently empty — planned business interface
+│   ├── 04_semantic/
+│   │   └── customer_intelligence_view.yaml   # Cortex Analyst semantic model
+│   ├── 05_agent/
+│   │   └── 01_configure_customer_intelligence_agent.sql   # Cortex Agent configuration
+│   └── 06_validation/           # currently empty — planned automated AI-output-validation harness
+└── streamlit/
+    └── streamlit_app.py          # Executive Customer Intelligence Dashboard
 ```
-
-Note: `sql/05_agent/` and `sql/06_validation/` are referenced in the roadmap but **do not exist as directories yet** — they're listed under [Current status and roadmap](#current-status-and-roadmap) rather than in the tree above, so this structure reflects what's actually in the repository today.
 
 ---
 
@@ -331,14 +362,15 @@ Note: `sql/05_agent/` and `sql/06_validation/` are referenced in the roadmap but
 
 | Category | Used today |
 |---|---|
-| Data platform | Snowflake (database, warehouse, role-based access) |
+| Data platform | Snowflake (database, warehouse, dedicated role-based access) |
 | Query / modeling | Snowflake SQL |
-| AI / conversational analytics | Snowflake Cortex Analyst, Snowflake Semantic Views |
+| AI / conversational analytics | Snowflake Cortex Analyst, Snowflake Semantic Views, Snowflake Cortex Agent |
+| Business interface | Streamlit in Snowflake |
 | Data preparation | Python, pandas |
 | Configuration | YAML (semantic model definition) |
 | Version control | Git, GitHub |
 
-Snowflake Cortex Agent and Streamlit in Snowflake are part of the target architecture (see [roadmap](#current-status-and-roadmap)) but are not yet used in this repository.
+Snowflake Cortex Search, Cortex Agent Skills, and MCP integration are part of the target architecture (see [roadmap](#current-status-and-roadmap)) but are not yet used in this repository.
 
 ---
 
@@ -347,32 +379,44 @@ Snowflake Cortex Agent and Streamlit in Snowflake are part of the target archite
 Requires a Snowflake account with Cortex enabled and `ACCOUNTADMIN` (or equivalent) access for initial setup.
 
 1. Place the five source `.xlsx` files in `data/raw/`, then run `python python/convert_xlsx_to_csv.py` to produce `data/processed/*.csv`.
-2. Run [`sql/00_setup/create_environment.sql`](sql/00_setup/create_environment.sql) to create the role, warehouse, database, and five schemas (`RAW`, `CORE`, `ANALYTICS`, `SEMANTIC`, `VALIDATION`).
+2. Run [`sql/00_setup/create_environment.sql`](sql/00_setup/create_environment.sql) to create the role, warehouse, database, and five schemas (`RAW`, `CORE`, `ANALYTICS`, `SEMANTIC`, `VALIDATION`), then [`sql/00_setup/02_project_role_permissions.sql`](sql/00_setup/02_project_role_permissions.sql) and [`sql/00_setup/03_streamlit_permissions.sql`](sql/00_setup/03_streamlit_permissions.sql) to grant `CUSTOMER_INTELLIGENCE_ROLE` the Cortex, semantic-view, evaluation, and Streamlit privileges used by every later step.
 3. Run both files in [`sql/01_ingestion/`](sql/01_ingestion/) in order — create the RAW tables, load the CSVs (via Snowsight upload or a stage of your choice), then run the data quality checks.
 4. Run the six files in [`sql/02_transformation/`](sql/02_transformation/) in numeric order to build the CORE layer, ending with `CUSTOMER_360_VIEW` and its validation queries.
 5. Run the nine files in [`sql/03_marts/`](sql/03_marts/) in numeric order to build the ANALYTICS marts.
 6. Deploy [`sql/04_semantic/customer_intelligence_view.yaml`](sql/04_semantic/customer_intelligence_view.yaml) as a Snowflake Semantic View (Snowsight → Cortex Analyst → create from YAML, or `CREATE SEMANTIC VIEW` depending on your Snowflake release).
-7. Query the semantic view through Cortex Analyst with natural-language questions, or query the ANALYTICS marts directly with SQL.
+7. Create the Cortex Agent object via Snowsight, then run [`sql/05_agent/01_configure_customer_intelligence_agent.sql`](sql/05_agent/01_configure_customer_intelligence_agent.sql) (`ALTER AGENT ... MODIFY LIVE VERSION SET SPECIFICATION`) to set its tool configuration on top of the semantic view.
+8. Deploy [`streamlit/streamlit_app.py`](streamlit/streamlit_app.py) as a Streamlit-in-Snowflake app in the `ANALYTICS` schema.
+9. Query the semantic view through Cortex Analyst or the Cortex Agent with natural-language questions, query the ANALYTICS marts directly with SQL, or open the Streamlit dashboard.
 
 ---
 
 ## Current status and roadmap
 
 **Implemented:**
-- Snowflake environment setup (role, warehouse, database, 5 schemas)
+- Snowflake environment setup (role, warehouse, database, 5 schemas) plus dedicated RBAC for Cortex, semantic-view, evaluation, and Streamlit privileges
 - RAW ingestion (5 tables) with 11 data quality checks
 - CORE layer (4 standardized entity tables + `CUSTOMER_360_VIEW`) with 5 validation checks
 - 9 ANALYTICS marts covering executive KPIs, segmentation, product adoption, product depth, customer value, churn reasons, and lifecycle-by-tenure analysis
 - Governed metric dictionary (21 metrics, 6 analytical principles)
-- Snowflake Semantic View for Cortex Analyst (4 logical tables, governed metrics, synonyms, named filters, 4 verified queries, and explicit AI guardrails)
+- Snowflake Semantic View for Cortex Analyst (4 logical tables, governed metrics, synonyms, named filters, and explicit AI guardrails)
+- Cortex Analyst, evaluated to 100% native accuracy (v1.2, 8/8 Verified Queries, zero regressions)
+- A 14-test-case manual business/guardrail evaluation suite (11 passing, 1 Analyst-fails/Agent-passes, 2 open)
+- Cortex Agent (`CUSTOMER_INTELLIGENCE_AGENT`) orchestrating Cortex Analyst with response-level guardrails
+- Executive Customer Intelligence Dashboard (Streamlit in Snowflake)
+- Semantic view YAML re-exported from Snowflake with all 8 Verified Queries and 4 named filters (see [Semantic layer](#semantic-layer))
 
-**Planned, not yet implemented:**
+**Known gaps (real objects exist; local repository or evaluation coverage hasn't fully caught up):**
 - `VALIDATION.METRIC_DEFINITIONS` SQL — the table exists live in Snowflake; the repository is missing the SQL to reproduce it (see [Metric governance](#metric-governance))
-- AI output validation framework and golden question set (`sql/06_validation/`)
-- Cortex Agent for orchestration and guardrail enforcement (`sql/05_agent/`)
-- Streamlit-in-Snowflake business interface (`streamlit/`)
-- Wiring the remaining 5 ANALYTICS marts (`VW_EXECUTIVE_KPIS`, `VW_PRODUCT_DEPTH`, `VW_CUSTOMER_VALUE`, `VW_CHURN_REASONS`, `VW_CHURN_BY_TENURE`) into the semantic layer
-- Python-based association/statistical analysis beyond the current xlsx→csv conversion utility
+- T07 (ambiguous "biggest churn problem" question) and T14 (product-cancellation misinterpretation) remain open in the evaluation suite — see [`docs/cortex_analyst_evaluation_plan.md`](docs/cortex_analyst_evaluation_plan.md)
+- The remaining 5 ANALYTICS marts (`VW_EXECUTIVE_KPIS`, `VW_PRODUCT_DEPTH`, `VW_CUSTOMER_VALUE`, `VW_CHURN_REASONS`, `VW_CHURN_BY_TENURE`) aren't wired into the semantic layer
+- An automated AI-output-validation harness (`sql/06_validation/`) is still an empty directory — today's evaluation work is native-Snowflake plus manual, not a repeatable golden-test pipeline
+
+**Planned next steps:**
+1. Integrate `CUSTOMER_INTELLIGENCE_AGENT` into the Streamlit dashboard as an "Ask the Customer Intelligence Agent" panel
+2. Build an automated Executive Churn Brief with email distribution
+3. Add a Churn Diagnostic Agent Skill
+4. Explore MCP interoperability for the Agent
+5. Finalize deployment and portfolio presentation
 
 ---
 
