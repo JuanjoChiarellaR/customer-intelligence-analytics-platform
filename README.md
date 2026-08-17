@@ -82,30 +82,48 @@ Every place in this platform where tenure-based analysis appears — SQL comment
 ## Architecture
 
 ```mermaid
-flowchart TD
-    A["IBM Telco source data<br/>7,043 customers"]:::done --> B["RAW schema<br/>5 tables, source-shaped"]:::done
-    B --> C["CORE schema<br/>standardized customer entities"]:::done
-    C --> D["CUSTOMER_360_VIEW<br/>one row per customer"]:::done
-    D --> E["ANALYTICS schema<br/>9 purpose-built marts"]:::done
-    E --> F["Metric governance<br/>metric_dictionary.md"]:::done
-    F --> G["SEMANTIC schema<br/>Cortex Analyst semantic view"]:::done
-    G --> H["Cortex Analyst<br/>natural-language SQL"]:::done
-    H --> I["Evaluation & guardrails<br/>native evals + manual suite"]:::partial
+flowchart TB
 
-    U["Business user"]:::done --> S["Streamlit dashboard"]:::done
-    S -->|"executive KPI sections<br/>direct SQL"| E
-    S -->|"'Ask Customer Intelligence<br/>Agent' panel"| R["SNOWFLAKE.CORTEX.<br/>DATA_AGENT_RUN"]:::done
-    R --> J["Cortex Agent<br/>orchestration + guardrails"]:::done
-    J --> H
-    J -.->|"response: text, table, chart,<br/>generated SQL, token usage"| S
+    subgraph DATA["1. Data & Governance"]
+        A["IBM Telco Data<br/>7,043 customers"] --> B["RAW"]
+        B --> C["CORE"]
+        C --> D["CUSTOMER_360_VIEW"]
+        D --> E["ANALYTICS Marts"]
+        E --> F["Governed Semantic View"]
+
+        M["Metric Governance<br/>definitions + business rules"] --> F
+    end
+
+    subgraph AI["2. AI Intelligence"]
+        F --> H["Cortex Analyst<br/>Natural Language → SQL"]
+
+        J["Cortex Agent<br/>Orchestration + Guardrails"] --> H
+
+        Q["Evaluation & Validation<br/>Native evals + manual guardrail tests"]
+
+        Q -.->|"validates"| H
+        Q -.->|"validates"| J
+    end
+
+    subgraph UX["3. Business Experience"]
+        U["Business User"] --> S["Streamlit"]
+
+        S --> K["Executive Dashboard"]
+        K -->|"direct SQL"| E
+
+        S --> L["Ask Customer Intelligence Agent"]
+        L --> R["DATA_AGENT_RUN"]
+        R --> J
+
+        J -->|"text, tables, charts,<br/>SQL + observability"| L
+    end
 
     classDef done fill:#e6f4ea,stroke:#34a853,stroke-width:1.5px,color:#1a1a1a;
-    classDef partial fill:#fff8e1,stroke:#f9ab00,stroke-width:1.5px,color:#1a1a1a;
+
+    class A,B,C,D,E,F,M,H,J,Q,U,S,K,L,R done;
 ```
 
-🟢 Solid green nodes are implemented and running in Snowflake today. 🟡 Amber marks evaluation and guardrail testing as documented and *partially* automated — Snowflake's native Cortex Analyst Evaluations are automated (100% accuracy at v1.2), while the broader 14-test-case business/guardrail suite is currently run manually.
-
-Two things worth reading carefully in this diagram: the Streamlit dashboard has **two independent data paths**, both live. The executive KPI/segmentation/lifecycle sections query the `ANALYTICS` marts directly with SQL. The "Ask Customer Intelligence Agent" panel instead calls `SNOWFLAKE.CORTEX.DATA_AGENT_RUN`, which invokes the Cortex Agent, which in turn orchestrates Cortex Analyst as its one tool against the same semantic view — neither path bypasses governed analytics. The dashed return edge is the response coming back to Streamlit, carrying both the business-facing content (narrative, tables, charts) and technical observability data (generated SQL, query ID, token usage) — see [Cortex Agent](#cortex-agent) and [Business interface](#business-interface). A fuller version of this diagram, with status detail per stage, lives in [`docs/architecture.md`](docs/architecture.md).
+All components shown above are implemented in V1. Native Cortex Analyst Evaluations are automated, while broader business and guardrail validation is executed manually and documented — Evaluation & Validation is a QA layer that validates Cortex Analyst and the Cortex Agent, not a runtime step every query passes through. The Streamlit application intentionally uses two paths: deterministic SQL for predefined executive analytics, and the Cortex Agent / Cortex Analyst for ad hoc natural-language exploration — an intentional design decision, not an implementation limitation. Both paths stay grounded in the same governed analytical model. A fuller version of this diagram, with status detail per stage, lives in [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
