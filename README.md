@@ -2,32 +2,45 @@
 
 An end-to-end customer intelligence platform built on Snowflake, using telecom churn data to demonstrate how raw customer data becomes a governed analytical model, and how that governed model — not the AI layer — is what natural-language analytics should rely on.
 
+## Executive Overview
+
+**Business Need:** Telecom providers lose significant revenue to customer churn, but decisions about where to focus retention efforts often rest on inconsistent metrics or dashboards that different teams interpret differently. Leadership needs one trusted view of who is churning, why, and how much it matters — a view analysts and AI tools alike can rely on without reinventing the numbers.
+
+**Solution:** This project delivers a governed customer intelligence platform: a single source of truth for customer, churn, and value metrics, accessible two ways — an executive dashboard for recurring reporting and a natural-language assistant for ad hoc questions — both grounded in the same approved business definitions.
+
+**How It Works:** Raw customer data is cleaned, standardized, and organized into governed analytical views. Those views feed both the dashboard and an AI agent, so every answer — clicked or asked in plain English — traces back to the same approved metrics.
+
+**Outcome:** Business users get consistent, trustworthy churn and customer-value insights in seconds, through a familiar dashboard or a conversational question, without needing technical expertise or guessing which number is correct.
+
+---
+
 Churn is the vehicle. The actual subject is the pipeline: **raw data → governed data model → analytical marts → metric governance → semantic layer → Cortex Analyst → AI validation → agent → business interface.** Every stage of that pipeline is implemented — SQL data model, semantic view, Cortex Analyst (evaluated to 100% native accuracy), a Cortex Agent with orchestration guardrails wired directly into the Streamlit dashboard via `SNOWFLAKE.CORTEX.DATA_AGENT_RUN`, and an executive business interface. Business users get governed KPI sections *and* a natural-language "Ask Customer Intelligence Agent" panel in the same app. What's not yet done is narrower and called out explicitly where it applies: two open Cortex-Analyst-alone evaluation test cases. See [Current status and roadmap](#current-status-and-roadmap).
 
 ---
 
 ## Table of contents
 
-1. [Why this project exists](#why-this-project-exists)
-2. [Business problem and questions](#business-problem-and-questions)
-3. [Data source and a critical limitation](#data-source-and-a-critical-limitation)
-4. [Architecture](#architecture)
-5. [Data pipeline and modeling layers](#data-pipeline-and-modeling-layers)
-6. [Data quality and validation](#data-quality-and-validation)
-7. [Analytical marts](#analytical-marts)
-8. [Metric governance](#metric-governance)
-9. [CLTV governance](#cltv-governance)
-10. [Semantic layer](#semantic-layer)
-11. [Cortex Analyst and AI analytics](#cortex-analyst-and-ai-analytics)
-12. [AI validation and evaluation](#ai-validation-and-evaluation)
-13. [Cortex Agent](#cortex-agent)
-14. [Business interface](#business-interface)
-15. [Key analytical insights](#key-analytical-insights)
-16. [Repository structure](#repository-structure)
-17. [Technology stack](#technology-stack)
-18. [How to reproduce](#how-to-reproduce)
-19. [Current status and roadmap](#current-status-and-roadmap)
-20. [Design principles](#design-principles)
+1. [Executive Overview](#executive-overview)
+2. [Why this project exists](#why-this-project-exists)
+3. [Business problem and questions](#business-problem-and-questions)
+4. [Data source and a critical limitation](#data-source-and-a-critical-limitation)
+5. [Architecture](#architecture)
+6. [Data pipeline and modeling layers](#data-pipeline-and-modeling-layers)
+7. [Data quality and validation](#data-quality-and-validation)
+8. [Analytical marts](#analytical-marts)
+9. [Metric governance](#metric-governance)
+10. [CLTV governance](#cltv-governance)
+11. [Semantic layer](#semantic-layer)
+12. [Cortex Analyst and AI analytics](#cortex-analyst-and-ai-analytics)
+13. [AI validation and evaluation](#ai-validation-and-evaluation)
+14. [Cortex Agent](#cortex-agent)
+15. [Business interface](#business-interface)
+16. [Key analytical insights](#key-analytical-insights)
+17. [Repository structure](#repository-structure)
+18. [Technology stack](#technology-stack)
+19. [How to reproduce](#how-to-reproduce)
+20. [Current status and roadmap](#current-status-and-roadmap)
+21. [Design principles](#design-principles)
 
 ---
 
